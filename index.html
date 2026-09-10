@@ -1,11 +1,9 @@
-
 <!doctype html>
 <html lang="th">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fleet Barcode Checker V2</title>
-<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <style>
@@ -27,17 +25,14 @@ input,select{padding:10px;border:1px solid #ccd4df;border-radius:8px;font-size:1
 </head>
 <body>
 <header>
-  <div><h1>Fleet Barcode Checker V2</h1><small>Excel Online / OneDrive • Multi-user</small></div>
-  <div><span id="userName">ยังไม่ได้เข้าสู่ระบบ</span>
-    <button id="loginBtn" class="primary" onclick="login()">Microsoft Login</button>
-    <button id="logoutBtn" class="primary hidden" onclick="logout()">Logout</button>
-  </div>
+  <div><h1>Fleet Barcode Checker V2</h1><small>Google Sheets • Multi-user</small></div>
+  <div><span id="userName">พร้อมใช้งาน</span></div>
 </header>
 <main class="wrap">
-<div id="configAlert" class="alert hidden">กรุณาใส่ Client ID และ Tenant ID ใน config.js ก่อนใช้งาน</div>
+<div id="configAlert" class="alert hidden">กรุณาใส่ URL ของ Google Apps Script Web App ใน config.js ก่อนใช้งาน</div>
 <div id="connection" class="notice">
-  ฐานข้อมูลกลาง: <b id="bookName">Excel Online</b> • <b>ไม่ต้องเลือกไฟล์จากเครื่อง</b><br>
-  ระบบจะอ่าน/เขียนไฟล์จาก OneDrive ของผู้ที่ Login ผ่าน Microsoft Graph
+  ฐานข้อมูลกลาง: <b id="bookName">Google Sheets</b> • <b>ไม่ต้องเลือกไฟล์จากเครื่อง</b><br>
+  ระบบอ่าน/เขียนข้อมูลผ่าน Google Apps Script ที่ผูกกับ Google Sheet กลาง
 </div>
 
 <div class="tabs">
@@ -93,200 +88,77 @@ input,select{padding:10px;border:1px solid #ccd4df;border-radius:8px;font-size:1
 <script src="config.js"></script>
 <script>
 const CFG=window.BARCODE_CONFIG||{};
-const GRAPH='https://graph.microsoft.com/v1.0';
-let msalApp=null,account=null,scanner=null,vehicles=[],history=[];
+let scanner=null,vehicles=[],history=[],colMap={};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const ready=()=>!!(CFG.clientId&&CFG.tenantId&&!String(CFG.clientId).startsWith('PUT-'));
-const authority=()=>`https://login.microsoftonline.com/${CFG.tenantId}`;
-const colMap={};
-
-function mapHeaders(row){
-  const h=(row||[]).map(x=>String(x??'').trim());
-  const aliases={
-    id:['VehicleID','Vehicle_ID','Vehicle ID'],
-    qr:['QRCode','QR_Code','QR Code'],
-    plate:['ทะเบียน','ทะเบียนรถ','License Plate'],
-    month:['เดือนจดทะเบียน','เดือน'],
-    province:['จังหวัด'],
-    status:['สถานะ'],
-    inspector:['ผู้ตรวจล่าสุด','ผู้ตรวจ'],
-    date:['วันที่ตรวจล่าสุด','วันที่'],
-    time:['เวลาตรวจล่าสุด','เวลา'],
-    area:['พื้นที่'],
-    barcode:['Barcode','BARCODE']
-  };
-  for(const k of Object.keys(aliases)){
-    colMap[k]=aliases[k].map(a=>h.indexOf(a)).find(i=>i>=0);
-  }
-  colMap.headers=h;
-}
-
-function val(v,k){let i=colMap[k];return i==null?-1:v[i];}
-function norm(x){return String(x??'').trim().toLowerCase();}
-function base(){
-  const p=String(CFG.workbookPath||'').replace(/^\/+/,'');
-  return `${GRAPH}/me/drive/root:/${encodeURIComponent(p).replace(/%2F/g,'/') }:/workbook`;
-}
-async function token(){
-  if(!account)throw Error('กรุณา Microsoft Login ก่อน');
-  try{return (await msalApp.acquireTokenSilent({scopes:['Files.ReadWrite'],account})).accessToken}
-  catch(e){return (await msalApp.acquireTokenPopup({scopes:['Files.ReadWrite']})).accessToken}
-}
-async function graph(url,opt={}){
-  const t=await token();
-  const r=await fetch(url,{...opt,headers:{Authorization:`Bearer ${t}`,'Content-Type':'application/json',...(opt.headers||{})}});
-  if(!r.ok)throw Error((await r.text()).slice(0,800));
-  return r.status===204?null:r.json();
-}
-async function getTableRows(name){
-  let url=`${base()}/tables/${encodeURIComponent(name)}/rows?$top=5000`, out=[];
-  while(url){const d=await graph(url);out.push(...(d.value||[]));url=d['@odata.nextLink']||null}
-  return out;
-}
-async function login(){
-  if(!ready())return alert('กรุณาใส่ Client ID และ Tenant ID ใน config.js');
-  try{
-    account=(await msalApp.loginPopup({scopes:['Files.ReadWrite'] ,prompt:'select_account'})).account;
-    msalApp.setActiveAccount(account);
-    $('userName').textContent=account.name||account.username;
-    $('loginBtn').classList.add('hidden');$('logoutBtn').classList.remove('hidden');
-    await loadAll();
-  }catch(e){alert('Login ไม่สำเร็จ: '+e.message)}
-}
-async function logout(){try{await msalApp.logoutPopup()}catch(e){}location.reload()}
-async function loadAll(){
-  if(!ready()||!account)return;
-  try{
-    const raw=await getTableRows(CFG.vehiclesTable||'VehiclesTable');
-    vehicles=raw.filter(x=>x.values?.[0]?.length);
-    if(!vehicles.length)throw Error('VehiclesTable ไม่มีข้อมูล');
-    mapHeaders(vehicles[0].values[0].map(()=>'')); // temporary; headers fetched below
-    const headerRange=await graph(`${base()}/worksheets/VEHICLES/range(address='A1:K1')`);
-    mapHeaders(headerRange.values[0]);
-    await loadHistory();
-    fillFilters();renderDashboard();renderSearch();
-    $('bookName').textContent=CFG.workbookPath;
-  }catch(e){alert('โหลด Excel Online ไม่สำเร็จ: '+e.message)}
-}
-async function loadHistory(){
-  try{history=await getTableRows(CFG.historyTable||'ScanHistoryTable');renderHistory()}catch(e){console.warn(e)}
-}
-function row(vrow){return vrow.values[0]}
-function findVehicle(code){
-  const c=norm(code).replace(/^barcode=/,'');
-  return vehicles.find(x=>{
-    const v=row(x);
-    return [val(v,'barcode'),val(v,'qr'),val(v,'id'),val(v,'plate')].some(z=>norm(z)===c)
+const norm=x=>String(x??'').trim().toLowerCase();
+const ready=()=>!!(CFG.apiUrl&&CFG.apiUrl.startsWith('http')&&!CFG.apiUrl.includes('PUT-YOUR'));
+function jsonp(params){
+  return new Promise((resolve,reject)=>{
+    const cb='__gs_cb_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+    const script=document.createElement('script');
+    const q=new URLSearchParams({...params,callback:cb});
+    if(CFG.apiKey)q.set('key',CFG.apiKey);
+    script.src=CFG.apiUrl+'?'+q.toString();
+    const timer=setTimeout(()=>{cleanup();reject(new Error('Google Apps Script ไม่ตอบกลับภายในเวลาที่กำหนด'))},30000);
+    function cleanup(){clearTimeout(timer);delete window[cb];script.remove()}
+    window[cb]=(data)=>{cleanup(); if(data?.ok===false)reject(new Error(data.error||'เกิดข้อผิดพลาด')); else resolve(data)};
+    script.onerror=()=>{cleanup();reject(new Error('เชื่อมต่อ Google Apps Script ไม่สำเร็จ'))};
+    document.body.appendChild(script);
   });
 }
+function mapHeaders(row){
+  const h=(row||[]).map(x=>String(x??'').trim());
+  const aliases={id:['VehicleID','Vehicle_ID','Vehicle ID'],qr:['QRCode','QR_Code','QR Code'],plate:['ทะเบียน','ทะเบียนรถ','License Plate'],month:['เดือนจดทะเบียน','เดือน'],province:['จังหวัด'],status:['สถานะ'],inspector:['ผู้ตรวจล่าสุด','ผู้ตรวจ'],date:['วันที่ตรวจล่าสุด','วันที่'],time:['เวลาตรวจล่าสุด','เวลา'],area:['พื้นที่'],barcode:['Barcode','BARCODE']};
+  for(const k of Object.keys(aliases))colMap[k]=aliases[k].map(a=>h.indexOf(a)).find(i=>i>=0);
+  colMap.headers=h;
+}
+function val(v,k){const i=colMap[k];return i==null?-1:v[i]}
+async function loadAll(){
+  if(!ready())return;
+  try{
+    const d=await jsonp({action:'getAll'});
+    mapHeaders(d.vehicles.headers); vehicles=d.vehicles.rows.map((r,i)=>({values:[r],index:i+1}));
+    history=d.history.rows.map(r=>({values:[r]}));
+    fillFilters();renderDashboard();renderSearch();renderHistory();
+    $('bookName').textContent='Google Sheets';
+    $('configAlert').classList.add('hidden');
+  }catch(e){$('configAlert').classList.remove('hidden');$('configAlert').textContent='เชื่อมต่อ Google Sheets ไม่สำเร็จ: '+e.message}
+}
+function findVehicle(code){const c=norm(code).replace(/^barcode=/,'');return vehicles.find(x=>[val(x.values[0],'barcode'),val(x.values[0],'qr'),val(x.values[0],'id'),val(x.values[0],'plate')].some(z=>norm(z)===c));}
 function badge(s){return s==='พบเล่ม'?'✅ พบเล่ม':s==='ไม่พบเล่ม'?'❌ ไม่พบเล่ม':'⏳ ยังไม่ตรวจ'}
 async function startScanner(){
   if(scanner)return;
   scanner=new Html5Qrcode('reader');
-  try{
-    await scanner.start({facingMode:'environment'},
-      {fps:10,qrbox:{width:320,height:140},
-       formatsToSupport:[
-        Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.CODE_93,Html5QrcodeSupportedFormats.CODABAR,
-        Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E]},
-      text=>recordScan(text.trim()),()=>{});
-  }catch(e){scanner=null;alert('เปิดกล้องไม่ได้: '+e.message)}
+  try{await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:320,height:140},formatsToSupport:[Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.CODE_93,Html5QrcodeSupportedFormats.CODABAR,Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E]},text=>recordScan(text.trim()),()=>{});}catch(e){scanner=null;alert('เปิดกล้องไม่ได้: '+e.message)}
 }
 async function stopScanner(){if(scanner){try{await scanner.stop()}catch(e){}try{scanner.clear()}catch(e){}scanner=null}}
 async function recordScan(code){
   await stopScanner();
-  // Refresh master immediately before deciding, reducing stale-data duplicates.
   await loadAll();
   const hit=findVehicle(code);
-  if(!hit){
-    $('scanResult').innerHTML=`<b style="color:#b22">ไม่พบ Barcode ใน Excel</b><div>${esc(code)}</div><small>ตรวจสอบคอลัมน์ Barcode ใน VEHICLES</small>`;
-    return;
-  }
-  const v=row(hit);
-  if(val(v,'status') && val(v,'status')!=='ยังไม่ตรวจ'){
-    $('scanResult').innerHTML=`<b>⚠️ รถคันนี้ตรวจแล้ว</b><br>${esc(val(v,'id'))} • ${esc(val(v,'plate'))}<br>สถานะ: ${badge(val(v,'status'))}<br>ผู้ตรวจล่าสุด: ${esc(val(v,'inspector')||'-')}<br>${esc(val(v,'date')||'')} ${esc(val(v,'time')||'')}`;
-    return;
-  }
-  const inspector=prompt('ชื่อผู้ตรวจ',account?.name||account?.username||'');
-  if(inspector===null)return;
+  if(!hit){$('scanResult').innerHTML=`<b style="color:#b22">ไม่พบ Barcode ใน Google Sheet</b><div>${esc(code)}</div><small>ตรวจสอบคอลัมน์ Barcode ในชีต VEHICLES</small>`;return;}
+  const v=hit.values[0];
+  if(val(v,'status')&&val(v,'status')!=='ยังไม่ตรวจ'){$('scanResult').innerHTML=`<b>⚠️ รถคันนี้ตรวจแล้ว</b><br>${esc(val(v,'id'))} • ${esc(val(v,'plate'))}<br>สถานะ: ${badge(val(v,'status'))}<br>ผู้ตรวจล่าสุด: ${esc(val(v,'inspector')||'-')}<br>${esc(val(v,'date')||'')} ${esc(val(v,'time')||'')}`;return;}
+  const inspector=prompt('ชื่อผู้ตรวจ','');if(inspector===null||!inspector.trim())return;
   const status=confirm('พบเล่มทะเบียนหรือไม่?\nกด OK = พบเล่ม\nกด Cancel = ไม่พบเล่ม')?'พบเล่ม':'ไม่พบเล่ม';
-  const now=new Date(), date=now.toLocaleDateString('th-TH'), time=now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const nv=[...v];
-  nv[colMap.status]=status;nv[colMap.inspector]=inspector;nv[colMap.date]=date;nv[colMap.time]=time;
+  $('scanResult').innerHTML='<span class="muted">กำลังบันทึก...</span>';
   try{
-    // Re-read the exact row immediately before write to reduce collision risk.
-    const latest=await graph(`${base()}/tables/${encodeURIComponent(CFG.vehiclesTable||'VehiclesTable')}/rows/${hit.index}`);
-    const lv=latest.values[0];
-    if(val(lv,'status') && val(lv,'status')!=='ยังไม่ตรวจ'){
-      $('scanResult').innerHTML='<b>⚠️ รถคันนี้ถูกตรวจโดยผู้ใช้งานอีกคนแล้ว</b><br>ไม่ได้บันทึกซ้ำ';
-      return;
-    }
-    await graph(`${base()}/tables/${encodeURIComponent(CFG.vehiclesTable||'VehiclesTable')}/rows/${hit.index}`,{
-      method:'PATCH',body:JSON.stringify({values:[nv]})
-    });
-    const sid='SC'+Date.now()+Math.floor(Math.random()*1000);
-    await graph(`${base()}/tables/${encodeURIComponent(CFG.historyTable||'ScanHistoryTable')}/rows/add`,{
-      method:'POST',body:JSON.stringify({index:null,values:[[sid,date,time,code,val(v,'plate'),val(v,'area'),inspector,status]]})
-    });
+    const d=await jsonp({action:'scan',code,inspector:inspector.trim(),status});
+    if(d.duplicate){$('scanResult').innerHTML='<b>⚠️ รถคันนี้ถูกตรวจโดยผู้ใช้งานอีกคนแล้ว</b><br>ระบบไม่บันทึกซ้ำ';return;}
     await loadAll();
-    $('scanResult').innerHTML=`<b>บันทึกสำเร็จ ✓</b><br>${esc(val(nv,'id'))} • ${esc(val(nv,'plate'))}<br>Barcode: ${esc(code)}<br>สถานะ: ${badge(status)}<br>ผู้ตรวจ: ${esc(inspector)}`;
+    const r=d.row||[];$('scanResult').innerHTML=`<b>บันทึกสำเร็จ ✓</b><br>${esc(val(r,'id'))} • ${esc(val(r,'plate'))}<br>Barcode: ${esc(code)}<br>สถานะ: ${badge(status)}<br>ผู้ตรวจ: ${esc(inspector)}<br>${esc(d.date||'')} ${esc(d.time||'')}`;
   }catch(e){$('scanResult').innerHTML=`<b style="color:#b22">บันทึกไม่สำเร็จ</b><br>${esc(e.message)}`}
 }
-function rows(){return vehicles.map(row)}
-function fillFilters(){
-  const months=[...new Set(rows().map(v=>val(v,'month')).filter(Boolean))].sort();
-  const areas=[...new Set(rows().map(v=>val(v,'area')).filter(Boolean))].sort();
-  $('monthFilter').innerHTML='<option value="">ทุกเดือน</option>'+months.map(x=>`<option>${esc(x)}</option>`).join('');
-  $('areaFilter').innerHTML='<option value="">ทุกพื้นที่</option>'+areas.map(x=>`<option>${esc(x)}</option>`).join('');
-}
-function filtered(){
-  const m=$('monthFilter').value,a=$('areaFilter').value;
-  return rows().filter(v=>(!m||val(v,'month')==m)&&(!a||val(v,'area')==a));
-}
-function renderDashboard(){
-  const a=filtered(),f=a.filter(v=>val(v,'status')==='พบเล่ม').length,n=a.filter(v=>val(v,'status')==='ไม่พบเล่ม').length,u=a.length-f-n;
-  $('total').textContent=a.length;$('found').textContent=f;$('notfound').textContent=n;$('unchecked').textContent=u;
-  const p=a.length?Math.round((f+n)/a.length*100):0;$('pct').textContent=p+'%';$('progress').style.width=p+'%';
-  $('summary').textContent=`พบเล่ม ${f} • ไม่พบเล่ม ${n} • ยังไม่ตรวจ ${u}`;
-}
-function renderSearch(){
-  const q=norm($('searchInput').value);
-  $('searchBody').innerHTML=rows().filter(v=>!q||[val(v,'id'),val(v,'barcode'),val(v,'plate')].some(x=>norm(x).includes(q))).slice(0,500)
-  .map(v=>`<tr>${[val(v,'id'),val(v,'barcode'),val(v,'plate'),val(v,'month'),val(v,'province'),badge(val(v,'status')),val(v,'inspector'),val(v,'date'),val(v,'time'),val(v,'area')].map(x=>`<td>${esc(x)}</td>`).join('')}</tr>`).join('');
-}
-function renderHistory(){
-  $('historyBody').innerHTML=history.slice(-500).reverse().map(x=>{const v=x.values[0]||[];return `<tr>${v.map(y=>`<td>${esc(y)}</td>`).join('')}</tr>`}).join('');
-}
-function renderPrint(){
-  const q=norm($('printFilter').value);$('printGrid').innerHTML='';
-  rows().filter(v=>!q||[val(v,'id'),val(v,'barcode'),val(v,'plate')].some(x=>norm(x).includes(q))).slice(0,300).forEach((v,n)=>{
-    const code=val(v,'barcode')||val(v,'id');const d=document.createElement('div');d.className='label';
-    d.innerHTML=`<svg id="bc${n}"></svg><b>${esc(code)}</b><br>${esc(val(v,'plate'))}<br><small>${esc(val(v,'id'))}</small>`;
-    $('printGrid').appendChild(d);JsBarcode('#bc'+n,String(code),{format:'CODE128',width:2,height:60,displayValue:false,margin:6});
-  });
-}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');$(b.dataset.tab).classList.add('active');
-});
-(async()=>{
-  $('configAlert').classList.toggle('hidden',ready());
-  if(!ready())return;
-  msalApp=new msal.PublicClientApplication({
-    auth:{clientId:CFG.clientId,authority:authority(),redirectUri:location.origin+location.pathname,postLogoutRedirectUri:location.origin+location.pathname},
-    cache:{cacheLocation:'localStorage',storeAuthStateInCookie:false}
-  });
-  try{
-    await msalApp.initialize();
-    const ac=msalApp.getAllAccounts();
-    if(ac.length){account=ac[0];msalApp.setActiveAccount(account);$('userName').textContent=account.name||account.username;$('loginBtn').classList.add('hidden');$('logoutBtn').classList.remove('hidden');await loadAll()}
-  }catch(e){console.warn(e)}
-})();
+function rows(){return vehicles.map(x=>x.values[0])}
+function fillFilters(){const months=[...new Set(rows().map(v=>val(v,'month')).filter(Boolean))].sort();const areas=[...new Set(rows().map(v=>val(v,'area')).filter(Boolean))].sort();$('monthFilter').innerHTML='<option value="">ทุกเดือน</option>'+months.map(x=>`<option>${esc(x)}</option>`).join('');$('areaFilter').innerHTML='<option value="">ทุกพื้นที่</option>'+areas.map(x=>`<option>${esc(x)}</option>`).join('')}
+function filtered(){const m=$('monthFilter').value,a=$('areaFilter').value;return rows().filter(v=>(!m||val(v,'month')==m)&&(!a||val(v,'area')==a))}
+function renderDashboard(){const a=filtered(),f=a.filter(v=>val(v,'status')==='พบเล่ม').length,n=a.filter(v=>val(v,'status')==='ไม่พบเล่ม').length,u=a.length-f-n;$('total').textContent=a.length;$('found').textContent=f;$('notfound').textContent=n;$('unchecked').textContent=u;const p=a.length?Math.round((f+n)/a.length*100):0;$('pct').textContent=p+'%';$('progress').style.width=p+'%';$('summary').textContent=`พบเล่ม ${f} • ไม่พบเล่ม ${n} • ยังไม่ตรวจ ${u}`}
+function renderSearch(){const q=norm($('searchInput').value);$('searchBody').innerHTML=rows().filter(v=>!q||[val(v,'id'),val(v,'barcode'),val(v,'plate')].some(x=>norm(x).includes(q))).slice(0,500).map(v=>`<tr>${[val(v,'id'),val(v,'barcode'),val(v,'plate'),val(v,'month'),val(v,'province'),badge(val(v,'status')),val(v,'inspector'),val(v,'date'),val(v,'time'),val(v,'area')].map(x=>`<td>${esc(x)}</td>`).join('')}</tr>`).join('')}
+function renderHistory(){$('historyBody').innerHTML=history.slice(-500).reverse().map(x=>{const v=x.values[0]||[];return `<tr>${v.map(y=>`<td>${esc(y)}</td>`).join('')}</tr>`}).join('')}
+function renderPrint(){const q=norm($('printFilter').value);$('printGrid').innerHTML='';rows().filter(v=>!q||[val(v,'id'),val(v,'barcode'),val(v,'plate')].some(x=>norm(x).includes(q))).slice(0,300).forEach((v,n)=>{const code=val(v,'barcode')||val(v,'id');const d=document.createElement('div');d.className='label';d.innerHTML=`<svg id="bc${n}"></svg><b>${esc(code)}</b><br>${esc(val(v,'plate'))}<br><small>${esc(val(v,'id'))}</small>`;$('printGrid').appendChild(d);JsBarcode('#bc'+n,String(code),{format:'CODE128',width:2,height:60,displayValue:false,margin:6})})}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active')});
+(async()=>{if(!ready()){ $('configAlert').classList.remove('hidden'); return;} await loadAll();})();
 </script>
 </body>
 </html>
