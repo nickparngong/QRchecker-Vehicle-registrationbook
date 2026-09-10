@@ -1,1402 +1,289 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Fleet Barcode Checker V2</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fleet Barcode Checker V3</title>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: Arial, "Noto Sans Thai", sans-serif;
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-header {
-  background: #0b2d55;
-  color: white;
-  padding: 18px 24px;
-}
-
-header h1 {
-  margin: 0;
-  font-size: 24px;
-}
-
-header p {
-  margin: 4px 0 0;
-  opacity: .9;
-}
-
-.container {
-  max-width: 1250px;
-  margin: 20px auto;
-  padding: 0 15px;
-}
-
-.alert {
-  padding: 15px 18px;
-  border-radius: 12px;
-  margin-bottom: 15px;
-  background: #fff7ed;
-  border: 1px solid #fdba74;
-}
-
-.alert.success {
-  background: #ecfdf5;
-  border-color: #86efac;
-  color: #166534;
-}
-
-.alert.error {
-  background: #fef2f2;
-  border-color: #fca5a5;
-  color: #b91c1c;
-}
-
-.tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 15px;
-}
-
-.tab {
-  border: 0;
-  background: #e2e8f0;
-  padding: 12px 20px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.tab.active {
-  background: #0b2d55;
-  color: white;
-}
-
-.page {
-  display: none;
-}
-
-.page.active {
-  display: block;
-}
-
-.card {
-  background: white;
-  border-radius: 15px;
-  padding: 20px;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 10px rgba(0,0,0,.05);
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-}
-
-.stat {
-  background: white;
-  border-radius: 15px;
-  padding: 20px;
-}
-
-.stat-title {
-  color: #475569;
-}
-
-.stat-number {
-  font-size: 32px;
-  font-weight: bold;
-  margin-top: 8px;
-}
-
-.progress {
-  height: 15px;
-  background: #e2e8f0;
-  border-radius: 20px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  background: #2563eb;
-  width: 0%;
-}
-
-input,
-select {
-  width: 100%;
-  padding: 13px;
-  border: 1px solid #cbd5e1;
-  border-radius: 9px;
-  font-size: 16px;
-}
-
-button.primary {
-  background: #2563eb;
-  color: white;
-}
-
-button.danger {
-  background: #dc2626;
-  color: white;
-}
-
-button {
-  border: 0;
-  padding: 12px 18px;
-  border-radius: 9px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
-.result {
-  margin-top: 15px;
-  padding: 18px;
-  border-radius: 12px;
-  background: #f8fafc;
-}
-
-.vehicle-title {
-  font-size: 24px;
-  font-weight: bold;
-  color: #0b2d55;
-}
-
-.vehicle-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.vehicle-item {
-  background: white;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 10px;
-  border-bottom: 1px solid #e2e8f0;
-  text-align: left;
-}
-
-th {
-  background: #f8fafc;
-}
-
-@media(max-width:800px) {
-  .stats {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .form-row,
-  .vehicle-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media(max-width:500px) {
-  .stats {
-    grid-template-columns: 1fr;
-  }
-}
+*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#172033;font-family:Arial,"Noto Sans Thai",sans-serif}
+header{background:linear-gradient(135deg,#081a32,#124a8a);color:#fff;padding:22px}.wrap{max-width:1250px;margin:auto;padding:18px}
+.card{background:#fff;border-radius:15px;padding:18px;margin-bottom:16px;box-shadow:0 5px 22px #0000000d}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{border:1px solid #e6ebf2;border-radius:12px;padding:16px}.stat b{font-size:28px;display:block;margin-top:5px}
+.toolbar,.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+button{padding:10px 15px;border:0;border-radius:9px;font-weight:700;cursor:pointer}.primary{background:#1463ff;color:#fff}.danger{background:#dc2626;color:#fff}.dark{background:#0b2342;color:#fff}.light{background:#fff;border:1px solid #ccd5e1}
+input{width:100%;padding:11px;border:1px solid #ccd5e1;border-radius:9px;font:inherit}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #edf0f4;text-align:left;font-size:14px}th{background:#f7f9fb}
+.msg{padding:11px;border-radius:9px;margin-top:10px}.ok{background:#dcfce7;color:#166534}.err{background:#fee2e2;color:#991b1b}.warn{background:#fef3c7;color:#92400e}
+.status{border-radius:99px;padding:5px 9px;font-size:12px;font-weight:700}.found{background:#dcfce7;color:#166534}.missing{background:#fee2e2;color:#991b1b}.pending{background:#fef3c7;color:#92400e}
+.hidden{display:none}.muted{color:#667085}.vehicle{font-size:21px;font-weight:800}
+#reader{width:100%;max-width:620px;margin:12px auto}.scanbox{border:1px solid #dbe2ea;border-radius:12px;padding:12px;background:#f8fafc}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}
+@media(max-width:520px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
-
 <body>
-
-<header>
-  <h1>Fleet Barcode Checker V2</h1>
-  <p>Google Sheets • Multi-user</p>
-</header>
-
-<div class="container">
-
-  <div id="connection" class="alert">
-    กำลังเชื่อมต่อ Google Sheets...
-  </div>
-
-  <div class="tabs">
-
-    <button class="tab active"
-      onclick="showPage('dashboard',this)">
-      Dashboard
-    </button>
-
-    <button class="tab"
-      onclick="showPage('scan',this)">
-      Scan Barcode
-    </button>
-
-    <button class="tab"
-      onclick="showPage('search',this)">
-      ค้นหาทะเบียน
-    </button>
-
-    <button class="tab"
-      onclick="showPage('history',this)">
-      Scan History
-    </button>
-
-  </div>
-
-
-  <!-- DASHBOARD -->
-
-  <section id="dashboard" class="page active">
-
-    <div class="stats">
-
-      <div class="stat">
-        <div class="stat-title">รถทั้งหมด</div>
-        <div id="total" class="stat-number">0</div>
-      </div>
-
-      <div class="stat">
-        <div class="stat-title">พบเล่ม</div>
-        <div id="found" class="stat-number">0</div>
-      </div>
-
-      <div class="stat">
-        <div class="stat-title">ไม่พบเล่ม</div>
-        <div id="notfound" class="stat-number">0</div>
-      </div>
-
-      <div class="stat">
-        <div class="stat-title">ยังไม่ตรวจ</div>
-        <div id="pending" class="stat-number">0</div>
-      </div>
-
-    </div>
-
-    <div class="card">
-
-      <h3>ความคืบหน้า</h3>
-
-      <div id="progressText">0%</div>
-
-      <br>
-
-      <div class="progress">
-        <div id="progressBar"
-             class="progress-bar"></div>
-      </div>
-
-    </div>
-
-    <div class="card">
-
-      <button class="primary"
-              onclick="loadData()">
-        ↻ รีเฟรชจาก Google Sheets
-      </button>
-
-    </div>
-
-  </section>
-
-
-  <!-- SCAN -->
-
-  <section id="scan" class="page">
-
-    <div class="card">
-
-      <h2>ตรวจเล่มทะเบียน</h2>
-
-      <div class="form-row">
-
-        <div>
-          <label>Barcode</label>
-          <input
-            id="barcode"
-            placeholder="เช่น 0100147330M"
-            autofocus>
-        </div>
-
-        <div>
-          <label>ผู้ตรวจ</label>
-          <input
-            id="inspector"
-            placeholder="ชื่อผู้ตรวจ">
-        </div>
-
-      </div>
-
-      <br>
-
-      <button class="primary"
-              onclick="searchBarcode()">
-        🔎 ค้นหา Barcode
-      </button>
-
-      <div id="scanResult"></div>
-
-    </div>
-
-  </section>
-
-
-  <!-- SEARCH -->
-
-  <section id="search" class="page">
-
-    <div class="card">
-
-      <h2>ค้นหาทะเบียนรถ</h2>
-
-      <input
-        id="plateSearch"
-        placeholder="กรอกทะเบียนรถ">
-
-      <br><br>
-
-      <button class="primary"
-              onclick="searchPlate()">
-        ค้นหา
-      </button>
-
-      <div id="plateResult"></div>
-
-    </div>
-
-  </section>
-
-
-  <!-- HISTORY -->
-
-  <section id="history" class="page">
-
-    <div class="card">
-
-      <h2>Scan History</h2>
-
-      <div style="overflow:auto">
-
-        <table>
-
-          <thead>
-            <tr>
-              <th>วันที่</th>
-              <th>เวลา</th>
-              <th>Barcode</th>
-              <th>ทะเบียน</th>
-              <th>ผู้ตรวจ</th>
-              <th>ผลการตรวจ</th>
-            </tr>
-          </thead>
-
-          <tbody id="historyBody"></tbody>
-
-        </table>
-
-      </div>
-
-    </div>
-
-  </section>
-
+<header><div class="wrap"><h1>Fleet Barcode Checker V3</h1><div>ตรวจนับเล่มทะเบียน • Google Apps Script + Google Sheets</div></div></header>
+<div class="wrap">
+<div class="card">
+<h3>สถานะการเชื่อมต่อ / สิทธิ์ Google Sheet</h3>
+<div id="connection">กำลังตรวจสอบ...</div>
+<div class="actions" style="margin-top:10px">
+<button class="primary" onclick="checkAuthorization()">🔐 ตรวจสอบสิทธิ์ Google Sheet</button>
+<button class="light" onclick="health()">↻ เชื่อมต่อใหม่</button>
+</div>
+<div class="muted" style="font-size:12px;margin-top:8px">
+หากสิทธิ์หลุด ให้เปิด Apps Script แล้วรันฟังก์ชัน <b>authorizeSheetAccess</b> 1 ครั้ง จากนั้น Deploy เวอร์ชันใหม่
+</div>
 </div>
 
+<div id="app" class="hidden">
+<div class="toolbar">
+<button class="dark" onclick="tab('dash')">Dashboard</button>
+<button class="light" onclick="tab('scan')">📷 Scan Barcode</button>
+<button class="light" onclick="tab('search')">ค้นหาทะเบียน</button>
+<button class="light" onclick="tab('history')">History</button>
+<button class="light" onclick="loadAll()">↻ Refresh</button>
+</div>
+
+<section id="dash">
+<div class="grid">
+<div class="stat">รถทั้งหมด<b id="total">0</b></div>
+<div class="stat">พบเล่ม<b id="found">0</b></div>
+<div class="stat">ไม่พบเล่ม<b id="missing">0</b></div>
+<div class="stat">ยังไม่ตรวจ<b id="pending">0</b></div>
+</div>
+<div class="card"><h3>สรุปตามเดือนจดทะเบียน</h3><div id="months"></div></div>
+</section>
+
+<section id="scan" class="hidden">
+<div class="card">
+<h2>📷 สแกน Barcode / QR Code</h2>
+<div class="scanbox">
+<div id="reader"></div>
+<div class="actions">
+<button class="primary" onclick="startScanner()">▶ เปิดกล้อง</button>
+<button class="light" onclick="stopScanner()">■ หยุดกล้อง</button>
+</div>
+<div id="cameraMsg" class="muted">กด “เปิดกล้อง” แล้วอนุญาตการใช้กล้อง</div>
+<div class="msg ok" style="margin-top:10px">⚡ <b>โหมดสแกนอัตโนมัติ:</b> เมื่อสแกนสำเร็จ ระบบจะบันทึกเป็น <b>พบเล่ม</b> ทันที แล้วพร้อมรับเล่มถัดไป โดยไม่ต้องกดปุ่มยืนยัน</div>
+</div>
+
+<div style="margin-top:18px"><label>Barcode / QR / Vehicle ID</label>
+<input id="scanInput" placeholder="สแกนหรือกรอก เช่น 0100147330M" onkeydown="if(event.key==='Enter')findVehicle()"></div>
+<div class="two" style="margin-top:12px">
+<div><label>ผู้ตรวจ</label><input id="inspector" placeholder="ชื่อผู้ตรวจ"></div>
+<div><label>พื้นที่</label><input id="area" placeholder="พื้นที่ตรวจ"></div>
+</div>
+<div class="actions" style="margin-top:12px"><button class="primary" onclick="findVehicle()">ค้นหา</button></div>
+<div id="scanResult"></div>
+</div>
+</section>
+
+<section id="search" class="hidden">
+<div class="card"><h2>ค้นหาทะเบียน</h2><input id="plate" placeholder="พิมพ์ทะเบียน" oninput="renderSearch()"><div id="searchResult" style="margin-top:12px"></div></div>
+</section>
+
+<section id="history" class="hidden">
+<div class="card"><h2>Scan History</h2><div style="overflow:auto"><table><thead><tr><th>วันที่</th><th>เวลา</th><th>QR/Barcode</th><th>ทะเบียน</th><th>พื้นที่</th><th>ผู้ตรวจ</th><th>ผล</th></tr></thead><tbody id="hist"></tbody></table></div></div>
+</section>
+</div>
+</div>
 
 <script>
+const API_URL='https://script.google.com/macros/s/AKfycbxRV7OShwPWWOYeZg1StYI-TRgpxj50NMFXBFCN3pdft4cQ9mnR24keqJg2Cfho9a4v3A/exec';
+const API_KEY='';
+let vehicles=[],history=[],scanner=null,scannerRunning=false;
 
-/* ==========================================
-   GOOGLE APPS SCRIPT WEB APP
-========================================== */
-
-const API =
-"https://script.google.com/macros/s/AKfycbyM7emX7Ot_JAamUG1TV3c3QooWjPErx1jk2ZpcJVw86TGyJ9B0q0a2tigKJvZwnQ2rag/exec";
-
-
-let vehicles = [];
-let history = [];
-
-let vehicleHeaders = [];
-let historyHeaders = [];
-
-
-/* ==========================================
-   JSONP
-========================================== */
-
-function api(action, params = {}) {
-
-  return new Promise((resolve, reject) => {
-
-    const callbackName =
-      "jsonp_" +
-      Date.now() +
-      "_" +
-      Math.floor(Math.random() * 100000);
-
-    const script =
-      document.createElement("script");
-
-    const query =
-      new URLSearchParams();
-
-    query.set("action", action);
-    query.set("callback", callbackName);
-
-    Object.keys(params).forEach(key => {
-      query.set(key, params[key]);
-    });
-
-    const timeout =
-      setTimeout(() => {
-
-        cleanup();
-
-        reject(
-          new Error("หมดเวลาการเชื่อมต่อ Google Sheets")
-        );
-
-      }, 20000);
-
-
-    window[callbackName] = function(data) {
-
-      clearTimeout(timeout);
-
-      cleanup();
-
-      resolve(data);
-
-    };
-
-
-    function cleanup() {
-
-      delete window[callbackName];
-
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-
-    }
-
-
-    script.onerror = function() {
-
-      clearTimeout(timeout);
-
-      cleanup();
-
-      reject(
-        new Error("ไม่สามารถเชื่อมต่อ Google Apps Script")
-      );
-
-    };
-
-
-    script.src =
-      API +
-      "?" +
-      query.toString();
-
-    document.body.appendChild(script);
-
-  });
-
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function jsonp(params){
+ return new Promise((resolve,reject)=>{
+  const cb='fleetCb_'+Date.now()+'_'+Math.floor(Math.random()*10000);
+  const script=document.createElement('script');
+  let timer=setTimeout(()=>{cleanup();reject(new Error('Apps Script ไม่ตอบกลับภายใน 20 วินาที'))},20000);
+  function cleanup(){clearTimeout(timer);delete window[cb];script.remove()}
+  window[cb]=data=>{cleanup();resolve(data)};
+  params.callback=cb;if(API_KEY)params.key=API_KEY;
+  script.src=API_URL+'?'+new URLSearchParams(params).toString();
+  script.onerror=()=>{cleanup();reject(new Error('เปิด Web App ไม่ได้ — ตรวจ Deployment URL และสิทธิ์ Anyone'))};
+  document.body.appendChild(script);
+ });
 }
-
-
-/* ==========================================
-   LOAD DATA
-========================================== */
-
-async function loadData() {
-
-  setConnection(
-    "กำลังโหลดข้อมูลจาก Google Sheets...",
-    "normal"
-  );
-
-  try {
-
-    const data =
-      await api("getAll");
-
-    if (!data || !data.ok) {
-
-      throw new Error(
-        data && data.error
-          ? data.error
-          : "Google Sheets ไม่ตอบข้อมูล"
-      );
-
-    }
-
-
-    vehicleHeaders =
-      data.vehicles.headers || [];
-
-    vehicles =
-      data.vehicles.rows || [];
-
-
-    historyHeaders =
-      data.history.headers || [];
-
-    history =
-      data.history.rows || [];
-
-
-    updateDashboard();
-
-    renderHistory();
-
-
-    setConnection(
-      "เชื่อมต่อ Google Sheets สำเร็จ",
-      "success"
-    );
-
-
-  } catch (error) {
-
-    console.error(error);
-
-    setConnection(
-      "เชื่อมต่อ Google Sheets ไม่สำเร็จ: " +
-      error.message,
-      "error"
-    );
-
+async function health(){
+ try{
+  const r=await jsonp({action:'health'});
+  if(!r.ok)throw Error(r.error);
+  connection.innerHTML='<div class="msg ok">✓ เชื่อมต่อ Google Sheet สำเร็จ<br><small>'+esc(r.spreadsheetName)+' • สิทธิ์พร้อมใช้งาน</small></div>';
+  app.classList.remove('hidden');
+  await loadAll();
+ }catch(e){
+  connection.innerHTML='<div class="msg err">✕ เชื่อมต่อไม่ได้<br>'+esc(e.message)+'<br><br><b>วิธีแก้:</b> เปิด Apps Script → เลือก authorizeSheetAccess → Run → อนุญาตสิทธิ์ Google → Deploy เวอร์ชันใหม่</div>';
+ }
+}
+async function checkAuthorization(){
+ try{
+  connection.innerHTML='<div class="msg warn">กำลังตรวจสอบสิทธิ์...</div>';
+  const r=await jsonp({action:'auth'});
+  if(r.authorized){
+    connection.innerHTML='<div class="msg ok">✓ สิทธิ์ Google Sheet พร้อมใช้งาน<br><small>'+esc(r.spreadsheetName)+'</small></div>';
+    app.classList.remove('hidden');
+    await loadAll();
+  }else{
+    connection.innerHTML='<div class="msg err">✕ ยังไม่มีสิทธิ์เข้าถึง Google Sheet<br>'+esc(r.error||'Authorization required')+'<br><br>ให้รัน <b>authorizeSheetAccess</b> ใน Apps Script ก่อน</div>';
   }
-
+ }catch(e){
+  connection.innerHTML='<div class="msg err">✕ ตรวจสอบสิทธิ์ไม่ได้: '+esc(e.message)+'</div>';
+ }
 }
 
+async function loadAll(){
+ const r=await jsonp({action:'getall'});
+ if(!r.ok)throw Error(r.error);
+ vehicles=r.vehicles||[];history=r.history||[];
+ renderDash();renderHistory();renderSearch();
+}
+function renderDash(){
+ let f=vehicles.filter(x=>x['สถานะ']==='พบเล่ม').length;
+ let m=vehicles.filter(x=>x['สถานะ']==='ไม่พบเล่ม').length;
+ let p=vehicles.length-f-m;
+ total.textContent=vehicles.length;found.textContent=f;missing.textContent=m;pending.textContent=p;
+ let map={};
+ vehicles.forEach(x=>{let k=x['เดือนจดทะเบียน']||'ไม่ระบุ';if(!map[k])map[k]={t:0,f:0,m:0,p:0};map[k].t++;if(x['สถานะ']==='พบเล่ม')map[k].f++;else if(x['สถานะ']==='ไม่พบเล่ม')map[k].m++;else map[k].p++});
+ months.innerHTML='<table><thead><tr><th>เดือน</th><th>ทั้งหมด</th><th>พบ</th><th>ไม่พบ</th><th>ยังไม่ตรวจ</th></tr></thead><tbody>'+Object.entries(map).map(([k,x])=>`<tr><td>${esc(k)}</td><td>${x.t}</td><td>${x.f}</td><td>${x.m}</td><td>${x.p}</td></tr>`).join('')+'</tbody></table>';
+}
+function findVehicle(){
+ let q=scanInput.value.trim().toLowerCase();
+ let v=vehicles.find(x=>[x.Barcode,x.QRCode,x.VehicleID,x['ทะเบียน']].some(z=>String(z||'').trim().toLowerCase()===q));
+ if(!v){scanResult.innerHTML='<div class="msg err">ไม่พบข้อมูลรถจากรหัสนี้</div>';return}
+ showVehicle(v);
+}
+function showVehicle(v){
+ let s=v['สถานะ']||'ยังไม่ตรวจ',c=s==='พบเล่ม'?'found':s==='ไม่พบเล่ม'?'missing':'pending';
+ scanResult.innerHTML=`<div class="card" style="margin-top:14px;border:1px solid #e3e8ef">
+ <div class="vehicle">${esc(v['ทะเบียน']||'-')}</div>
+ <div class="muted">Vehicle ID: ${esc(v.VehicleID||'-')} • Barcode: ${esc(v.Barcode||'-')}</div>
+ <p>เดือนจดทะเบียน: <b>${esc(v['เดือนจดทะเบียน']||'-')}</b></p>
+ <p>จังหวัด: ${esc(v['จังหวัด']||'-')}</p>
+ <p>สถานะ: <span class="status ${c}">${esc(s)}</span></p>
+ <div class="actions"><button class="primary" onclick="saveCheck(${v._row},'พบเล่ม')">✓ พบเล่ม</button><button class="danger" onclick="saveCheck(${v._row},'ไม่พบเล่ม')">✕ ไม่พบเล่ม</button></div>
+ <div id="saveMsg"></div></div>`;
+}
+async function saveCheck(row,result){
+ const v=vehicles.find(x=>x._row===row);
+ const inspector=document.getElementById('inspector').value.trim();
+ const area=document.getElementById('area').value.trim();
+ if(!inspector){alert('กรุณาระบุผู้ตรวจ');return}
+ const box=document.getElementById('saveMsg');
+ box.innerHTML='<div class="msg warn">กำลังบันทึก...</div>';
+ try{
+   const lookup=v.Barcode||v.QRCode||v.VehicleID||v['ทะเบียน'];
+   const r=await jsonp({action:'scan',lookup:lookup,result:result,inspector:inspector,area:area});
+   if(!r.ok)throw Error(r.error);
+   box.innerHTML=r.duplicate?'<div class="msg warn">มีผลนี้อยู่แล้ว ไม่เพิ่มประวัติซ้ำ</div>':'<div class="msg ok">✓ บันทึกลง Google Sheet สำเร็จ</div>';
+   await loadAll();
+ }catch(e){box.innerHTML='<div class="msg err">บันทึกไม่สำเร็จ: '+esc(e.message)+'</div>'}
+}
+async function startScanner(){
+ if(scannerRunning)return;
+ if(typeof Html5Qrcode==='undefined'){cameraMsg.textContent='โหลดระบบกล้องไม่สำเร็จ กรุณา Refresh';return}
+ scanner=new Html5Qrcode('reader');
+ try{
+   const formats=[
+     Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,
+     Html5QrcodeSupportedFormats.CODE_93,Html5QrcodeSupportedFormats.EAN_13,
+     Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,
+     Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.QR_CODE
+   ];
+   const config={fps:10,qrbox:{width:300,height:160},formatsToSupport:formats,aspectRatio:1.777};
+   await scanner.start({facingMode:'environment'},config,onScanSuccess,onScanFailure);
+   scannerRunning=true;cameraMsg.textContent='กล้องกำลังทำงาน — หัน Barcode ให้อยู่ในกรอบ';
+ }catch(e){
+   cameraMsg.textContent='เปิดกล้องไม่ได้: '+e.message;
+   scanner=null;
+ }
+}
+async function stopScanner(){
+ if(scanner && scannerRunning){try{await scanner.stop()}catch(e){}}
+ scannerRunning=false;
+ cameraMsg.textContent='หยุดกล้องแล้ว';
+}
+let lastAutoScan = '';
+let lastAutoScanAt = 0;
 
-/* ==========================================
-   DASHBOARD
-========================================== */
+async function onScanSuccess(decodedText){
+ const code=String(decodedText||'').trim();
+ if(!code) return;
+ const now=Date.now();
+ // Ignore the same barcode repeatedly detected by the camera for 2 seconds.
+ if(code===lastAutoScan && now-lastAutoScanAt<2000) return;
+ lastAutoScan=code;
+ lastAutoScanAt=now;
 
-function updateDashboard() {
+ scanInput.value=code;
+ cameraMsg.textContent='กำลังบันทึกอัตโนมัติ: '+code;
 
-  const statusIndex =
-    findHeader(
-      vehicleHeaders,
-      ["สถานะ"]
-    );
+ // Pause the camera briefly while saving, then continue scanning the next book.
+ if(scanner && scannerRunning){
+   try{scanner.pause(true)}catch(e){}
+ }
 
-
-  const total =
-    vehicles.length;
-
-
-  let found = 0;
-  let notfound = 0;
-  let pending = 0;
-
-
-  vehicles.forEach(row => {
-
-    const status =
-      statusIndex >= 0
-        ? String(row[statusIndex] || "").trim()
-        : "";
-
-
-    if (status === "พบเล่ม") {
-
-      found++;
-
-    } else if (status === "ไม่พบเล่ม") {
-
-      notfound++;
-
-    } else {
-
-      pending++;
-
-    }
-
-  });
-
-
-  document.getElementById("total")
-    .textContent = total;
-
-  document.getElementById("found")
-    .textContent = found;
-
-  document.getElementById("notfound")
-    .textContent = notfound;
-
-  document.getElementById("pending")
-    .textContent = pending;
-
-
-  const checked =
-    found + notfound;
-
-  const percent =
-    total
-      ? Math.round(
-          checked / total * 100
-        )
-      : 0;
-
-
-  document.getElementById("progressText")
-    .textContent =
-      percent + "%";
-
-
-  document.getElementById("progressBar")
-    .style.width =
-      percent + "%";
-
+ try{
+   await autoSaveScanned(code);
+ }finally{
+   if(scanner && scannerRunning){
+     try{scanner.resume()}catch(e){}
+   }
+   scanInput.value='';
+   setTimeout(()=>{ if(scannerRunning) scanInput.focus(); },50);
+ }
 }
 
+async function autoSaveScanned(code){
+ const inspector=document.getElementById('inspector').value.trim();
+ const area=document.getElementById('area').value.trim();
+ if(!inspector){
+   cameraMsg.innerHTML='<span style="color:#991b1b;font-weight:700">⚠ กรุณาระบุผู้ตรวจก่อนเริ่มสแกน</span>';
+   return;
+ }
+ try{
+   const r=await jsonp({action:'scan',lookup:code,result:'พบเล่ม',inspector:inspector,area:area});
+   if(!r.ok) throw Error(r.error);
 
-/* ==========================================
-   BARCODE SEARCH
-========================================== */
-
-function searchBarcode() {
-
-  const code =
-    document.getElementById("barcode")
-      .value
-      .trim();
-
-
-  if (!code) {
-
-    alert("กรุณากรอก Barcode");
-
-    return;
-
-  }
-
-
-  const indexes =
-    getVehicleIndexes();
-
-
-  let found = null;
-
-
-  for (const row of vehicles) {
-
-    const match =
-      indexes.some(index => {
-
-        return normalize(row[index]) ===
-               normalize(code);
-
-      });
-
-
-    if (match) {
-
-      found = row;
-
-      break;
-
-    }
-
-  }
-
-
-  if (!found) {
-
-    document.getElementById("scanResult")
-      .innerHTML = `
-
-        <div class="result">
-
-          <div style="color:#dc2626;font-size:20px;font-weight:bold">
-            ไม่พบ Barcode ใน Google Sheet
-          </div>
-
-          <div>
-            ${escapeHtml(code)}
-          </div>
-
-        </div>
-
-      `;
-
-    return;
-
-  }
-
-
-  showVehicle(found);
-
+   const v=r.vehicle||{};
+   const plate=v['ทะเบียน']||code;
+   if(r.duplicate){
+     cameraMsg.innerHTML='⚠ <b>'+esc(plate)+'</b> — เคยบันทึก “พบเล่ม” แล้ว (ไม่เพิ่มประวัติซ้ำ) • พร้อมสแกนเล่มถัดไป';
+   }else{
+     cameraMsg.innerHTML='✓ <b>'+esc(plate)+'</b> — บันทึก “พบเล่ม” อัตโนมัติแล้ว • พร้อมสแกนเล่มถัดไป';
+   }
+   // Update the local screen immediately without waiting for a full refresh.
+   if(r.vehicle){
+     const idx=vehicles.findIndex(x=>x._row===r.vehicle._row);
+     if(idx>=0) vehicles[idx]=Object.assign({},vehicles[idx],r.vehicle);
+   }
+   if(r.scan) history.push(r.scan);
+   renderDash();renderHistory();renderSearch();
+ }catch(e){
+   cameraMsg.innerHTML='<span style="color:#991b1b;font-weight:700">✕ '+esc(e.message)+'</span> • ตรวจสอบแล้วลองสแกนใหม่';
+ }
 }
 
-
-/* ==========================================
-   SHOW VEHICLE
-========================================== */
-
-function showVehicle(row) {
-
-  const map =
-    makeMap(vehicleHeaders);
-
-
-  const barcode =
-    value(row, map.barcode);
-
-  const plate =
-    value(row, map.plate);
-
-  const vehicleId =
-    value(row, map.id);
-
-  const month =
-    value(row, map.month);
-
-  const province =
-    value(row, map.province);
-
-  const status =
-    value(row, map.status);
-
-  const area =
-    value(row, map.area);
-
-
-  const result =
-    document.getElementById("scanResult");
-
-
-  result.innerHTML = `
-
-    <div class="result">
-
-      <div class="vehicle-title">
-        ${escapeHtml(plate || "ไม่ระบุทะเบียน")}
-      </div>
-
-      <div class="vehicle-grid">
-
-        <div class="vehicle-item">
-          <b>Vehicle ID</b><br>
-          ${escapeHtml(vehicleId)}
-        </div>
-
-        <div class="vehicle-item">
-          <b>Barcode</b><br>
-          ${escapeHtml(barcode)}
-        </div>
-
-        <div class="vehicle-item">
-          <b>เดือนจดทะเบียน</b><br>
-          ${escapeHtml(month)}
-        </div>
-
-        <div class="vehicle-item">
-          <b>จังหวัด</b><br>
-          ${escapeHtml(province)}
-        </div>
-
-        <div class="vehicle-item">
-          <b>พื้นที่</b><br>
-          ${escapeHtml(area)}
-        </div>
-
-        <div class="vehicle-item">
-          <b>สถานะปัจจุบัน</b><br>
-          ${escapeHtml(status)}
-        </div>
-
-      </div>
-
-      <br>
-
-      ${
-        status &&
-        status !== "ยังไม่ตรวจ"
-        ? `
-          <div class="alert error">
-            รถคันนี้ตรวจแล้ว ไม่สามารถตรวจซ้ำได้
-          </div>
-        `
-        : `
-
-          <button class="primary"
-            onclick="saveScan('พบเล่ม')">
-            ✓ พบเล่ม
-          </button>
-
-          <button class="danger"
-            onclick="saveScan('ไม่พบเล่ม')">
-            ✕ ไม่พบเล่ม
-          </button>
-
-        `
-      }
-
-    </div>
-
-  `;
-
+function onScanFailure(error){/* scan continues */}
+function renderSearch(){
+ let q=(plate.value||'').toLowerCase();
+ let a=vehicles.filter(v=>!q||String(v['ทะเบียน']||'').toLowerCase().includes(q)).slice(0,200);
+ searchResult.innerHTML='<table><thead><tr><th>ทะเบียน</th><th>Vehicle ID</th><th>เดือน</th><th>จังหวัด</th><th>สถานะ</th></tr></thead><tbody>'+
+ a.map(v=>`<tr><td>${esc(v['ทะเบียน'])}</td><td>${esc(v.VehicleID)}</td><td>${esc(v['เดือนจดทะเบียน'])}</td><td>${esc(v['จังหวัด'])}</td><td>${esc(v['สถานะ']||'ยังไม่ตรวจ')}</td></tr>`).join('')+'</tbody></table>';
 }
-
-
-/* ==========================================
-   SAVE SCAN
-========================================== */
-
-async function saveScan(status) {
-
-  const code =
-    document.getElementById("barcode")
-      .value
-      .trim();
-
-
-  const inspector =
-    document.getElementById("inspector")
-      .value
-      .trim();
-
-
-  if (!inspector) {
-
-    alert("กรุณาระบุชื่อผู้ตรวจ");
-
-    return;
-
-  }
-
-
-  try {
-
-    document.getElementById("scanResult")
-      .innerHTML +=
-      `<p>กำลังบันทึก...</p>`;
-
-
-    const result =
-      await api(
-        "scan",
-        {
-          code: code,
-          inspector: inspector,
-          status: status
-        }
-      );
-
-
-    if (!result.ok) {
-
-      if (result.duplicate) {
-
-        alert(
-          "รถคันนี้ถูกตรวจไปแล้ว"
-        );
-
-      } else {
-
-        alert(
-          result.error ||
-          "บันทึกไม่สำเร็จ"
-        );
-
-      }
-
-      await loadData();
-
-      return;
-
-    }
-
-
-    alert(
-      "บันทึกสำเร็จ"
-    );
-
-
-    await loadData();
-
-
-    document.getElementById("scanResult")
-      .innerHTML = `
-
-        <div class="result">
-
-          <div style="color:#15803d;font-size:22px;font-weight:bold">
-            ✓ บันทึกสำเร็จ
-          </div>
-
-          <p>
-            Barcode:
-            ${escapeHtml(code)}
-          </p>
-
-          <p>
-            ผลการตรวจ:
-            ${escapeHtml(status)}
-          </p>
-
-          <p>
-            ผู้ตรวจ:
-            ${escapeHtml(inspector)}
-          </p>
-
-        </div>
-
-      `;
-
-
-  } catch (error) {
-
-    alert(
-      "เกิดข้อผิดพลาด: " +
-      error.message
-    );
-
-  }
-
+function renderHistory(){
+ hist.innerHTML=history.slice().reverse().slice(0,500).map(x=>`<tr><td>${esc(x['วันที่'])}</td><td>${esc(x['เวลา'])}</td><td>${esc(x['QR_Code'])}</td><td>${esc(x['ทะเบียน'])}</td><td>${esc(x['พื้นที่'])}</td><td>${esc(x['ผู้ตรวจ'])}</td><td>${esc(x['ผลการตรวจ'])}</td></tr>`).join('');
 }
-
-
-/* ==========================================
-   SEARCH PLATE
-========================================== */
-
-function searchPlate() {
-
-  const search =
-    normalize(
-      document.getElementById("plateSearch")
-        .value
-    );
-
-
-  if (!search) {
-
-    alert("กรุณากรอกทะเบียน");
-
-    return;
-
-  }
-
-
-  const map =
-    makeMap(vehicleHeaders);
-
-
-  const results =
-    vehicles.filter(row => {
-
-      return normalize(
-        value(row, map.plate)
-      ).includes(search);
-
-    });
-
-
-  const container =
-    document.getElementById("plateResult");
-
-
-  if (!results.length) {
-
-    container.innerHTML =
-      `<div class="result">
-        ไม่พบทะเบียน
-      </div>`;
-
-    return;
-
-  }
-
-
-  container.innerHTML =
-    results.map(row => {
-
-      return `
-
-        <div class="result">
-
-          <div class="vehicle-title">
-            ${escapeHtml(
-              value(row,map.plate)
-            )}
-          </div>
-
-          <p>
-            Barcode:
-            ${escapeHtml(
-              value(row,map.barcode)
-            )}
-          </p>
-
-          <p>
-            สถานะ:
-            ${escapeHtml(
-              value(row,map.status)
-            )}
-          </p>
-
-          <p>
-            เดือนจดทะเบียน:
-            ${escapeHtml(
-              value(row,map.month)
-            )}
-          </p>
-
-        </div>
-
-      `;
-
-    }).join("");
-
+function tab(id){
+ ['dash','scan','search','history'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));
+ if(id!=='scan')stopScanner();
+ if(id==='scan')setTimeout(()=>scanInput.focus(),100);
 }
-
-
-/* ==========================================
-   HISTORY
-========================================== */
-
-function renderHistory() {
-
-  const map =
-    makeHistoryMap(historyHeaders);
-
-
-  const body =
-    document.getElementById("historyBody");
-
-
-  body.innerHTML =
-    history
-      .slice()
-      .reverse()
-      .slice(0,200)
-      .map(row => {
-
-        return `
-
-          <tr>
-
-            <td>
-              ${escapeHtml(
-                value(row,map.date)
-              )}
-            </td>
-
-            <td>
-              ${escapeHtml(
-                value(row,map.time)
-              )}
-            </td>
-
-            <td>
-              ${escapeHtml(
-                value(row,map.code)
-              )}
-            </td>
-
-            <td>
-              ${escapeHtml(
-                value(row,map.plate)
-              )}
-            </td>
-
-            <td>
-              ${escapeHtml(
-                value(row,map.inspector)
-              )}
-            </td>
-
-            <td>
-              ${escapeHtml(
-                value(row,map.result)
-              )}
-            </td>
-
-          </tr>
-
-        `;
-
-      }).join("");
-
-}
-
-
-/* ==========================================
-   HEADER MAP
-========================================== */
-
-function makeMap(headers) {
-
-  return {
-
-    id:
-      findHeader(
-        headers,
-        ["VehicleID","Vehicle_ID","Vehicle ID"]
-      ),
-
-    barcode:
-      findHeader(
-        headers,
-        ["Barcode","BARCODE"]
-      ),
-
-    qr:
-      findHeader(
-        headers,
-        ["QRCode","QR_Code","QR Code"]
-      ),
-
-    plate:
-      findHeader(
-        headers,
-        ["ทะเบียน","ทะเบียนรถ","License Plate"]
-      ),
-
-    month:
-      findHeader(
-        headers,
-        ["เดือนจดทะเบียน","เดือน"]
-      ),
-
-    province:
-      findHeader(
-        headers,
-        ["จังหวัด"]
-      ),
-
-    status:
-      findHeader(
-        headers,
-        ["สถานะ"]
-      ),
-
-    inspector:
-      findHeader(
-        headers,
-        ["ผู้ตรวจล่าสุด","ผู้ตรวจ"]
-      ),
-
-    date:
-      findHeader(
-        headers,
-        ["วันที่ตรวจล่าสุด","วันที่"]
-      ),
-
-    time:
-      findHeader(
-        headers,
-        ["เวลาตรวจล่าสุด","เวลา"]
-      ),
-
-    area:
-      findHeader(
-        headers,
-        ["พื้นที่"]
-      )
-
-  };
-
-}
-
-
-function makeHistoryMap(headers) {
-
-  return {
-
-    date:
-      findHeader(
-        headers,
-        ["วันที่","Date"]
-      ),
-
-    time:
-      findHeader(
-        headers,
-        ["เวลา","Time"]
-      ),
-
-    code:
-      findHeader(
-        headers,
-        [
-          "Barcode",
-          "BARCODE",
-          "QR_Code",
-          "QRCode"
-        ]
-      ),
-
-    plate:
-      findHeader(
-        headers,
-        ["ทะเบียน","ทะเบียนรถ"]
-      ),
-
-    inspector:
-      findHeader(
-        headers,
-        ["ผู้ตรวจ","ผู้ตรวจล่าสุด"]
-      ),
-
-    result:
-      findHeader(
-        headers,
-        ["ผลการตรวจ","สถานะ","Result"]
-      )
-
-  };
-
-}
-
-
-function getVehicleIndexes() {
-
-  const map =
-    makeMap(vehicleHeaders);
-
-
-  return [
-    map.barcode,
-    map.qr,
-    map.id,
-    map.plate
-  ].filter(i => i >= 0);
-
-}
-
-
-function findHeader(headers, aliases) {
-
-  for (const alias of aliases) {
-
-    const index =
-      headers.findIndex(
-        h =>
-          String(h).trim() === alias
-      );
-
-    if (index >= 0) {
-      return index;
-    }
-
-  }
-
-  return -1;
-
-}
-
-
-function value(row,index) {
-
-  return index >= 0
-    ? String(row[index] ?? "")
-    : "";
-
-}
-
-
-function normalize(value) {
-
-  return String(
-    value ?? ""
-  )
-  .trim()
-  .toLowerCase();
-
-}
-
-
-function setConnection(text,type) {
-
-  const box =
-    document.getElementById("connection");
-
-  box.textContent = text;
-
-  box.className =
-    "alert " +
-    (type === "success"
-      ? "success"
-      : type === "error"
-      ? "error"
-      : "");
-
-}
-
-
-function showPage(id,button) {
-
-  document
-    .querySelectorAll(".page")
-    .forEach(page =>
-      page.classList.remove("active")
-    );
-
-
-  document
-    .querySelectorAll(".tab")
-    .forEach(tab =>
-      tab.classList.remove("active")
-    );
-
-
-  document
-    .getElementById(id)
-    .classList.add("active");
-
-
-  button.classList.add("active");
-
-}
-
-
-function escapeHtml(value) {
-
-  return String(value ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-
-}
-
-
-/* ==========================================
-   START
-========================================== */
-
-loadData();
-
+health();
 </script>
-
 </body>
 </html>
