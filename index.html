@@ -3,208 +3,133 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vehicle Registration Book Scanner V1</title>
+<title>Vehicle Registration Book Scanner V3</title>
 <style>
-:root{--navy:#0b1f3a;--blue:#1463ff;--green:#16a34a;--orange:#ea580c;--red:#dc2626;--bg:#f3f6fa;--line:#dbe4ef;--text:#10213a}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:var(--bg);color:var(--text)}
-header{background:linear-gradient(110deg,#07182d,#123c70);color:#fff;padding:18px 24px;position:sticky;top:0;z-index:5}
-header .title{font-size:21px;font-weight:800}header small{opacity:.8}
-nav{background:#fff;border-bottom:1px solid var(--line);display:flex;gap:6px;padding:8px 18px;position:sticky;top:72px;z-index:4;overflow:auto}
-nav button{border:0;background:transparent;padding:10px 14px;border-radius:8px;font-weight:700;color:#53657d;cursor:pointer;white-space:nowrap}
-nav button.active{background:#eaf1ff;color:var(--blue)}
-.wrap{max-width:1250px;margin:20px auto;padding:0 16px}.page{display:none}.page.active{display:block}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px;box-shadow:0 4px 18px #0b1f3a0a}
-.kpi small{color:#64748b}.kpi strong{display:block;font-size:30px;margin-top:7px}.kpi .sub{font-size:12px;margin-top:5px;color:#64748b}
-.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-top:16px}
-h2,h3{margin:0 0 14px}.barrow{display:grid;grid-template-columns:70px 1fr 95px;align-items:center;gap:10px;margin:11px 0;font-size:13px}.bar{height:13px;background:#edf2f7;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:var(--blue);border-radius:99px}
-input,select{width:100%;padding:12px;border:1px solid #b9c7d8;border-radius:9px;font-size:15px;background:#fff}label{font-size:12px;color:#64748b;display:block;margin-bottom:5px}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.scanInput{font-size:27px;font-weight:800;letter-spacing:1px;border:2px solid var(--blue);height:62px}
-button{border:0;border-radius:9px;padding:10px 15px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer}.btn2{background:#eef3fb;color:#17365f;border:1px solid #d2deed}.btnDanger{background:var(--red)}
-.status{padding:14px;border-radius:10px;background:#f1f5f9;margin-top:12px;min-height:50px}.ok{background:#ecfdf3;color:#166534}.warn{background:#fff7ed;color:#9a3412}.err{background:#fef2f2;color:#991b1b}
-table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #e7edf5;text-align:left;font-size:13px;white-space:nowrap}th{background:#f7f9fc;position:sticky;top:0}.tablewrap{overflow:auto;max-height:480px}
-.badge{display:inline-block;padding:4px 9px;border-radius:99px;font-size:11px;font-weight:800}.found{background:#dcfce7;color:#166534}.pending{background:#e5e7eb;color:#475569}.unknown{background:#fee2e2;color:#991b1b}.dup{background:#ffedd5;color:#9a3412}
-.progress{height:18px;background:#edf2f7;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:var(--green)}
-.actions{display:flex;gap:8px;flex-wrap:wrap}.muted{color:#64748b;font-size:12px}.bigResult{font-size:19px;font-weight:800}
-@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}@media(max-width:600px){.cards{grid-template-columns:1fr 1fr}.row{grid-template-columns:1fr}header{padding:15px}.title{font-size:18px!important}}
-
-.loginOverlay{position:fixed;inset:0;background:linear-gradient(135deg,#07182d,#123c70);display:flex;align-items:center;justify-content:center;z-index:100}
-.loginBox{width:min(420px,92vw);background:#fff;border-radius:18px;padding:28px;box-shadow:0 25px 70px #0005}.loginLogo{text-align:center;font-size:42px}.loginBox h2{text-align:center;margin:8px 0 4px}.loginBox .muted{text-align:center;margin-bottom:20px}.loginError{display:none;background:#fef2f2;color:#991b1b;padding:10px;border-radius:8px;margin:10px 0;font-size:13px}.loginBtn{width:100%;font-size:16px;margin-top:12px}.userBadge{display:inline-flex;align-items:center;gap:7px;background:#eaf1ff;color:#173b75;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}.logout{background:#fee2e2;color:#991b1b;padding:7px 10px}
+:root{
+ --navy:#08244a;--navy2:#123d70;--blue:#1769ff;--cyan:#0aa6c8;
+ --orange:#f26b21;--gold:#f5a623;--green:#17a673;--red:#df3d32;
+ --bg:#eef3f8;--line:#cbd8e6;--text:#13243a;--muted:#63748a;--white:#fff;
+}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,"Noto Sans Thai",sans-serif}
+.login{position:fixed;inset:0;background:linear-gradient(135deg,#061a34,#124779);z-index:100;display:flex;align-items:center;justify-content:center}
+.loginbox{width:min(410px,92vw);background:white;border-radius:18px;padding:28px;box-shadow:0 25px 80px #0006}.loginbox h2{text-align:center;margin:5px 0}.loginbox .muted{text-align:center}.loginIcon{text-align:center;font-size:46px}label{display:block;font-size:12px;color:var(--muted);margin:9px 0 5px}
+input,select{width:100%;padding:11px 12px;border:1px solid #b9c8d8;border-radius:8px;font-size:14px;background:#fff}button{border:0;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer}
+.btn{background:var(--blue);color:white}.btn2{background:#eaf1fa;color:#173d68;border:1px solid #ccd9e8}.btnred{background:#fee2e2;color:#991b1b}.hidden{display:none!important}
+.top{background:linear-gradient(100deg,var(--navy),var(--navy2));color:#fff;padding:12px 20px}.brand{font-size:20px;font-weight:900}.sub{font-size:11px;opacity:.82;margin-top:3px}.user{display:flex;gap:8px;align-items:center;margin-top:7px}.pill{background:#eaf1ff;color:#173d68;border-radius:99px;padding:5px 10px;font-size:11px;font-weight:800}
+.nav{background:#fff;border-bottom:1px solid var(--line);display:flex;gap:4px;padding:7px 15px;overflow:auto}.nav button{background:transparent;color:#4d6077;white-space:nowrap}.nav button.active{background:#e8f0ff;color:var(--blue)}
+.wrap{max-width:1280px;margin:12px auto;padding:0 12px}.page{display:none}.page.active{display:block}
+.heroGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.hero{border-radius:9px;min-height:178px;color:#fff;padding:13px;position:relative;overflow:hidden}.hero.blue{background:linear-gradient(125deg,#0d3f78,#1769ff)}.hero.orange{background:linear-gradient(125deg,#d94c12,#f17b19)}
+.hero h2{margin:0;font-size:21px}.hero p{margin:4px 0 10px;font-size:11px;opacity:.9}.heroStats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.heroStat{background:#ffffff18;border:1px solid #ffffff35;border-radius:7px;padding:8px}.heroStat b{display:block;font-size:23px}.heroStat span{font-size:10px}.heroIcon{position:absolute;right:12px;bottom:-15px;font-size:82px;opacity:.15}
+.sectionTitle{background:var(--navy);color:white;border-radius:6px 6px 0 0;padding:6px 10px;font-weight:900;font-size:13px;margin-top:7px}
+.workflow{background:white;border:1px solid var(--line);border-top:0;border-radius:0 0 7px 7px;padding:10px;display:grid;grid-template-columns:repeat(8,1fr);gap:5px}.step{position:relative;text-align:center;min-height:72px;padding:7px 4px;background:#f7f9fc;border-radius:6px;border:1px solid #dce5ef}.step:not(:last-child):after{content:"→";position:absolute;right:-9px;top:24px;color:var(--blue);font-weight:900;z-index:2}.num{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900}.step b{display:block;font-size:11px;margin-top:3px}.step small{font-size:9px;color:var(--muted)}
+.bottomGrid{display:grid;grid-template-columns:1.05fr 1.2fr 1.05fr;gap:7px;margin-top:7px}.panel{background:white;border:1px solid var(--line);border-radius:7px;overflow:hidden}.panelHead{background:var(--navy);color:#fff;padding:6px 9px;font-size:12px;font-weight:900}.panelBody{padding:9px}
+.abc{display:grid;grid-template-columns:45px 1fr;gap:7px;align-items:center;margin:6px 0}.letter{font-size:22px;font-weight:900;text-align:center;padding:4px;border-radius:6px;color:white}.A{background:var(--red)}.B{background:var(--gold)}.C{background:var(--green)}.abc b{font-size:11px}.abc span{display:block;font-size:9px;color:var(--muted)}
+.month{display:grid;grid-template-columns:36px 1fr 55px;gap:6px;align-items:center;margin:5px 0;font-size:9px}.bar{height:9px;background:#edf2f7;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:var(--blue)}
+.check{display:flex;gap:7px;align-items:flex-start;margin:7px 0;font-size:10px}.check strong{display:block}.check span{color:var(--muted);font-size:9px}
+.tip{margin-top:7px;background:var(--navy);color:#fff;padding:6px 9px;border-radius:6px;font-size:9px;text-align:center}
+.scanPage{display:grid;grid-template-columns:1.15fr .85fr;gap:10px}.card{background:white;border:1px solid var(--line);border-radius:9px;padding:15px}.scanInput{font-size:28px;font-weight:900;height:62px;border:2px solid var(--blue);letter-spacing:1px}.status{margin-top:10px;padding:12px;border-radius:8px;background:#f1f5f9}.ok{background:#eafaf0;color:#146b38}.err{background:#fff0ee;color:#9e2118}.warn{background:#fff6e9;color:#9a4b0a}
+.tablewrap{overflow:auto;max-height:500px}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #e7edf3;text-align:left;font-size:12px;white-space:nowrap}th{background:#f7f9fc;position:sticky;top:0}.badge{padding:4px 8px;border-radius:99px;font-size:10px;font-weight:800}.green{background:#dcfce7;color:#166534}.gray{background:#e7ebf0;color:#475569}.red{background:#fee2e2;color:#991b1b}.orange{background:#ffedd5;color:#9a3412}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:11px}.kpi small{font-size:10px;color:var(--muted)}.kpi b{display:block;font-size:24px;margin-top:4px}
+@media(max-width:900px){.workflow{grid-template-columns:repeat(4,1fr)}.bottomGrid,.scanPage{grid-template-columns:1fr}.heroGrid{grid-template-columns:1fr}.hero{min-height:150px}}@media(max-width:550px){.workflow{grid-template-columns:repeat(2,1fr)}.step:not(:last-child):after{display:none}.kpis{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
-<div id="loginOverlay" class="loginOverlay">
-  <div class="loginBox">
-    <div class="loginLogo">🔐</div>
-    <h2>Admin Login</h2>
-    <div class="muted">Vehicle Registration Book Scanner V1</div>
-    <div id="loginError" class="loginError"></div>
-    <label>Username</label>
-    <input id="loginUser" autocomplete="username" placeholder="กรอก Username">
-    <label style="margin-top:10px">Password</label>
-    <input id="loginPass" type="password" autocomplete="current-password" placeholder="กรอก Password">
-    <button type="button" class="loginBtn" onclick="doLogin()">🔓 Login เพื่อเริ่ม Scan</button>
-    <div class="muted" style="margin-top:12px">Prototype: บัญชีทดลองสำหรับ V1</div>
-  </div>
+<div id="login" class="login">
+ <div class="loginbox">
+  <div class="loginIcon">🔐</div><h2>Vehicle Registration Book Scanner</h2><div class="muted">V3 Infographic Prototype</div>
+  <div id="loginErr" style="display:none;background:#fff0ee;color:#9e2118;padding:9px;border-radius:7px;margin-top:10px;font-size:12px"></div>
+  <label>Username</label><input id="user" placeholder="Username">
+  <label>Password</label><input id="pass" type="password" placeholder="Password">
+  <button class="btn" style="width:100%;margin-top:12px" onclick="login()">🔓 Login</button>
+  <div class="muted" style="margin-top:10px;font-size:11px">admin / admin123 • scanner01 / scan123</div>
+ </div>
 </div>
 
-<header><div class="title">📚 Vehicle Registration Book Scanner V1</div><small>ระบบตรวจนับเล่มทะเบียนรถ • Prototype พร้อมทดลอง • Barcode Scanner Mode</small><div style="margin-top:8px;display:flex;gap:8px;align-items:center"><span id="userBadge" class="userBadge">🔒 ยังไม่ได้ Login</span><button id="logoutBtn" class="logout" style="display:none" onclick="logout()">ออกจากระบบ</button></div></header>
-<nav>
-<button class="active" data-page="dashboard">🏠 Dashboard</button>
-<button data-page="scan">🔫 Scan Barcode</button>
-<button data-page="vehicles">📋 Vehicle List</button>
-<button data-page="history">📜 Scan History</button>
+<header class="top">
+ <div class="brand">📚 Vehicle Registration Book Scanner V3</div><div class="sub">ระบบตรวจนับเล่มทะเบียนรถ • Barcode Scanner • Dashboard & Traceability</div>
+ <div class="user"><span id="userPill" class="pill">🔒 ยังไม่ได้ Login</span><button id="logout" class="btnred hidden" onclick="logout()">ออกจากระบบ</button></div>
+</header>
+<nav class="nav">
+ <button class="active" data-page="dashboard">🏠 Dashboard</button><button data-page="scan">🔫 Scan Barcode</button><button data-page="remaining">📋 เล่มคงเหลือ</button><button data-page="vehicles">🚗 Vehicle List</button><button data-page="history">📜 Scan History</button>
 </nav>
 
-<div class="wrap">
+<main class="wrap">
 <section id="dashboard" class="page active">
-<div class="cards">
-<div class="card kpi"><small>📚 เล่มทั้งหมด</small><strong id="kTotal">1,936</strong><div class="sub">Master Vehicle</div></div>
-<div class="card kpi"><small>✅ ตรวจแล้ว</small><strong id="kFound">0</strong><div class="sub">พบเล่ม</div></div>
-<div class="card kpi"><small>⏳ คงเหลือ</small><strong id="kPending">1,936</strong><div class="sub">ยังไม่ตรวจ</div></div>
-<div class="card kpi"><small>📈 ความคืบหน้า</small><strong id="kPct">0%</strong><div class="sub">Completion</div></div>
-</div>
-<div class="grid2">
-<div class="card"><h3>📅 สรุปตามเดือนจดทะเบียน</h3><div id="months"></div></div>
-<div class="card"><h3>🎯 ความคืบหน้าวันนี้</h3>
-<div class="row"><div><label>เป้าหมาย/วัน</label><input id="target" type="number" value="300"></div><div><label>ตรวจวันนี้</label><input id="todayCount" disabled></div></div>
-<div style="margin-top:14px"><div class="progress"><i id="todayBar" style="width:0%"></i></div><div class="muted" id="todayText" style="margin-top:8px">0 / 300</div></div>
-<hr style="border:0;border-top:1px solid #e7edf5;margin:18px 0">
-<div class="actions"><button onclick="go('scan')">🔫 เริ่มสแกน</button><button class="btn2" onclick="go('vehicles')">📋 ดูรายการคงเหลือ</button></div>
-</div></div>
+ <div class="heroGrid">
+  <div class="hero blue"><h2>📚 REGISTRATION BOOK COUNT</h2><p>ตรวจนับเล่มทะเบียนรถด้วย Barcode • ตรวจสอบได้ทุกเล่ม</p>
+   <div class="heroStats"><div class="heroStat"><span>ทั้งหมด</span><b id="all">1,936</b></div><div class="heroStat"><span>ตรวจแล้ว</span><b id="found">0</b></div><div class="heroStat"><span>คงเหลือ</span><b id="remain">1,936</b></div></div><div class="heroIcon">📖</div>
+  </div>
+  <div class="hero orange"><h2>🔫 SCAN COUNT</h2><p>ยิง Barcode → บันทึก Auto → พร้อมยิงเล่มถัดไป</p>
+   <div class="heroStats"><div class="heroStat"><span>วันนี้</span><b id="today">0</b></div><div class="heroStat"><span>ซ้ำ</span><b id="dup">0</b></div><div class="heroStat"><span>ไม่พบ</span><b id="unknown">0</b></div></div><div class="heroIcon">▦</div>
+  </div>
+ </div>
+ <div class="sectionTitle">REGISTRATION BOOK COUNT WORKFLOW</div>
+ <div class="workflow">
+  <div class="step"><span class="num">1</span><b>เตรียมงาน</b><small>Master 1,936</small></div><div class="step"><span class="num">2</span><b>Login</b><small>ผู้ตรวจ/หน่วยงาน</small></div><div class="step"><span class="num">3</span><b>Scan Barcode</b><small>USB/HID</small></div><div class="step"><span class="num">4</span><b>ค้นหา Master</b><small>Vehicle ID</small></div><div class="step"><span class="num">5</span><b>บันทึก Auto</b><small>วัน/เวลา</small></div><div class="step"><span class="num">6</span><b>ตรวจซ้ำ</b><small>Duplicate</small></div><div class="step"><span class="num">7</span><b>Update Dashboard</b><small>Real-time Demo</small></div><div class="step"><span class="num">8</span><b>ติดตามคงเหลือ</b><small>รายเดือน</small></div>
+ </div>
+ <div class="bottomGrid">
+  <div class="panel"><div class="panelHead">📊 MONTHLY COUNT — ตรวจนับตามเดือนจดทะเบียน</div><div class="panelBody" id="months"></div></div>
+  <div class="panel"><div class="panelHead">🎯 CONTROL POINTS — จุดควบคุมการตรวจนับ</div><div class="panelBody">
+   <div class="check">✓ <div><strong>1 Barcode = 1 เล่ม</strong><span>ป้องกันการนับซ้ำและเก็บ Duplicate Log</span></div></div>
+   <div class="check">✓ <div><strong>Inspector & Area จาก Login</strong><span>SCANNER ไม่สามารถแก้ชื่อ/หน่วยงานเอง</span></div></div>
+   <div class="check">✓ <div><strong>Unknown Barcode</strong><span>แยกรายการ Barcode ที่ไม่พบใน Master</span></div></div>
+   <div class="check">✓ <div><strong>Traceability</strong><span>รู้ว่าใครตรวจ เมื่อไร และหน่วยงานใด</span></div></div>
+   <div class="check">✓ <div><strong>Remaining List</strong><span>สร้างรายการเล่มที่ยังไม่ตรวจอัตโนมัติ</span></div></div>
+  </div></div>
+  <div class="panel"><div class="panelHead">📈 PROGRESS — ภาพรวม</div><div class="panelBody">
+   <div style="font-size:28px;font-weight:900" id="pct">0%</div><div class="bar" style="height:14px;margin:7px 0 12px"><i id="pctbar" style="width:0%;height:100%;display:block;background:var(--green)"></i></div>
+   <div class="check">🎯 <div><strong>เป้าหมายวันนี้</strong><span id="targetText">0 / 300 เล่ม</span></div></div>
+   <div class="check">📦 <div><strong>คงเหลือ</strong><span id="remainText">1,936 เล่ม</span></div></div>
+   <div class="actions"><button class="btn" onclick="go('scan')">🔫 เริ่ม Scan</button><button class="btn2" onclick="go('remaining')">📋 คงเหลือ</button></div>
+  </div></div>
+ </div>
+ <div class="tip">💡 TIP: Scanner แบบ USB/HID + ระบบบันทึกอัตโนมัติ ช่วยลดขั้นตอนและเพิ่มความเร็วในการตรวจนับ</div>
 </section>
 
 <section id="scan" class="page">
-<div class="grid2">
-<div class="card"><h2>🔫 Scan Barcode</h2><div class="row">
-<div><label>ผู้ตรวจ</label><input id="inspector" value="นิค"></div>
-<div><label>พื้นที่</label><input id="area" value="GNR1"></div></div>
-<div id="roleInfo" class="muted" style="margin-top:10px"></div><div style="margin-top:14px"><label>ยิง Barcode จากเครื่องอ่าน</label><input id="barcode" class="scanInput" autocomplete="off" autofocus placeholder="ยิง Barcode แล้ว Enter"></div>
-<div class="muted" style="margin-top:7px">เครื่องอ่าน USB/HID ทำงานเหมือนคีย์บอร์ด: ยิง → Enter → บันทึกอัตโนมัติ → พร้อมยิงเล่มถัดไป</div>
-<div id="scanStatus" class="status">พร้อมสแกน</div>
-<div style="margin-top:14px"><b>ทดสอบโดยไม่ใช้เครื่องอ่าน</b><div id="testButtons" class="actions" style="margin-top:8px"></div></div></div>
-<div class="card"><h3>📌 ผลการตรวจล่าสุด</h3><div id="lastResult" class="muted">ยังไม่มีรายการ</div><hr style="border:0;border-top:1px solid #e7edf5;margin:16px 0"><h3>⚡ รายการล่าสุด</h3><div id="miniHistory"></div></div>
-</div></section>
-
-<section id="vehicles" class="page">
-<div class="card"><h2>📋 Vehicle List</h2><div class="row"><input id="search" placeholder="ค้นหา Barcode / ทะเบียน"><select id="monthFilter"><option value="">ทุกเดือน</option></select></div>
-<div style="margin-top:12px" class="tablewrap"><table><thead><tr><th>Barcode</th><th>ทะเบียน</th><th>เดือน</th><th>สถานะ</th><th>ผู้ตรวจล่าสุด</th><th>เวลา</th></tr></thead><tbody id="vehicleTable"></tbody></table></div></div>
+ <div class="scanPage">
+  <div class="card"><h2>🔫 SCAN BARCODE</h2><div class="row"><div><label>ผู้ตรวจ</label><input id="inspector" disabled></div><div><label>หน่วยงาน</label><input id="area" disabled></div></div>
+  <label style="margin-top:14px">Barcode</label><input id="barcode" class="scanInput" autofocus placeholder="ยิง Barcode แล้ว Enter">
+  <div class="muted" style="margin-top:7px">USB/HID: ยิง → Enter → บันทึกอัตโนมัติ → พร้อมยิงต่อ • ไม่ใช้กล้อง</div>
+  <div id="status" class="status">พร้อมสแกน</div>
+  <div style="margin-top:12px"><b>ปุ่มทดสอบ</b><div id="test" class="actions" style="margin-top:7px"></div></div></div>
+  <div class="card"><h3>📌 ผลล่าสุด</h3><div id="last" class="muted">ยังไม่มีรายการ</div><hr style="border:0;border-top:1px solid #e8edf3;margin:15px 0"><h3>⚡ ล่าสุด</h3><div id="recent"></div></div>
+ </div>
 </section>
 
-<section id="history" class="page">
-<div class="card"><h2>📜 Scan History</h2><div class="actions"><button class="btn2" onclick="exportCSV()">📤 Export CSV</button><button class="btnDanger" onclick="clearDemo()">ล้างข้อมูลทดลอง</button></div>
-<div style="margin-top:12px" class="tablewrap"><table><thead><tr><th>วันที่</th><th>เวลา</th><th>Barcode</th><th>ทะเบียน</th><th>เดือน</th><th>ผู้ตรวจ</th><th>พื้นที่</th><th>ผล</th></tr></thead><tbody id="historyTable"></tbody></table></div></div>
-</section>
-</div>
+<section id="remaining" class="page"><div class="card"><h2>📋 รายการเล่มคงเหลือ</h2><div class="row"><input id="remSearch" placeholder="ค้นหา Barcode / ทะเบียน"><select id="remMonth"><option value="">ทุกเดือน</option></select></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Barcode</th><th>ทะเบียน</th><th>เดือน</th><th>สถานะ</th></tr></thead><tbody id="remTable"></tbody></table></div></div></section>
+<section id="vehicles" class="page"><div class="card"><h2>🚗 Vehicle List</h2><div class="row"><input id="vehSearch" placeholder="Barcode / ทะเบียน"><select id="vehMonth"><option value="">ทุกเดือน</option></select></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Barcode</th><th>ทะเบียน</th><th>เดือน</th><th>สถานะ</th><th>ผู้ตรวจ</th><th>เวลา</th></tr></thead><tbody id="vehTable"></tbody></table></div></div></section>
+<section id="history" class="page"><div class="card"><h2>📜 Scan History</h2><button class="btn2" onclick="exportCSV()">📤 Export CSV</button><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>วันที่</th><th>เวลา</th><th>Barcode</th><th>ทะเบียน</th><th>เดือน</th><th>ผู้ตรวจ</th><th>หน่วยงาน</th><th>ผล</th></tr></thead><tbody id="histTable"></tbody></table></div></div></section>
+</main>
 
 <script>
-const $=id=>document.getElementById(id);
-
-const DEMO_USERS={
-"admin":{password:"admin123",name:"Administrator",role:"ADMIN",area:"ALL",status:"Active"},
-"scanner01":{password:"scan123",name:"อนัญญา",role:"SCANNER",area:"GNR1",status:"Active"}
-};
-let currentUser=JSON.parse(sessionStorage.getItem("VRB_CURRENT_USER")||"null");
-
-
-function applyRolePolicy(){
- if(!currentUser)return;
- $("inspector").value=currentUser.name;
- $("area").value=currentUser.area;
- $("inspector").readOnly=true;
- $("area").readOnly=true;
- if($("roleInfo"))$("roleInfo").textContent="👤 ผู้ตรวจ: "+currentUser.name+"  •  🏢 หน่วยงาน: "+currentUser.area+"  •  "+currentUser.role;
-}
-function showLoggedIn(){
-  if(!currentUser)return;
-  $("loginOverlay").style.display="none";
-  applyRolePolicy();
-  $("userBadge").innerHTML="👤 "+currentUser.name+" • "+currentUser.role;
-  $("logoutBtn").style.display="inline-block";
-  if(typeof focusScan==="function") focusScan();
-}
-function doLogin(){
-  const u=$("loginUser").value.trim().toLowerCase();
-  const p=$("loginPass").value;
-  const found=DEMO_USERS[u];
-  if(found && found.password===p){
-    currentUser={username:u,name:found.name,role:found.role,area:found.area,status:found.status};
-    sessionStorage.setItem("VRB_CURRENT_USER",JSON.stringify(currentUser));
-    $("loginError").style.display="none";
-    applyRolePolicy();
-    showLoggedIn();
-    if(typeof go==="function")go("scan");
-    setTimeout(()=>{$("barcode").focus()},120);
-  }else{
-    $("loginError").style.display="block";
-    $("loginError").textContent="❌ Username หรือ Password ไม่ถูกต้อง";
-    $("loginPass").value="";
-    $("loginUser").focus();
-  }
-}
-function logout(){
-  if(confirm("ต้องการออกจากระบบหรือไม่?")){
-    sessionStorage.removeItem("VRB_CURRENT_USER"); currentUser=null;
-    $("loginOverlay").style.display="flex";
-    $("userBadge").innerHTML="🔒 ยังไม่ได้ Login";
-    $("logoutBtn").style.display="none";
-    $("loginUser").value="";$("loginPass").value="";$("loginUser").focus();
-  }
-}
-$("loginPass").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();doLogin()}});
-$("loginUser").addEventListener("keydown",e=>{if(e.key==="Enter")$("loginPass").focus()});
-window.addEventListener("load",()=>{ if(currentUser){applyRolePolicy();showLoggedIn();} else $("loginUser").focus(); });
-
-const TOTAL=1936, MONTHS=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
-// Demo master: 1,936 records are represented by 12 monthly totals; sample barcodes are real testable records.
+const $=id=>document.getElementById(id), MONTHS=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."], TOTAL=1936;
 const monthCounts=[160,145,180,155,175,170,165,158,165,160,150,153];
-const sample=[];
-for(let i=0;i<40;i++){let m=i%12;let n=String(i+1).padStart(4,"0");sample.push({barcode:"010014"+String(7330+i).padStart(4,"0")+"M",plate:"1ขช "+(7330+i),month:m});}
-let hist=JSON.parse(localStorage.getItem("VRB_V1_HISTORY")||"[]");
-function save(){localStorage.setItem("VRB_V1_HISTORY",JSON.stringify(hist))}
-function today(){return new Date().toLocaleDateString("th-TH")}
-function time(){return new Date().toLocaleTimeString("th-TH",{hour12:false})}
-function go(page){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(page).classList.add("active");document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===page));if(page==="scan")focusScan();renderAll()}
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>go(b.dataset.page));
-function monthFound(m){return hist.filter(x=>x.ok&&x.month===m).length}
-function renderDashboard(){
- const scopedHist=currentUser&&currentUser.role==="SCANNER"?hist.filter(x=>x.inspector===currentUser.name&&x.area===currentUser.area):hist; const found=scopedHist.filter(x=>x.ok).length,pending=TOTAL-found,pct=(found/TOTAL*100);
- $("kFound").textContent=found;$("kPending").textContent=pending;$("kPct").textContent=pct.toFixed(1)+"%";
- const todayN=scopedHist.filter(x=>x.ok&&x.date===today()).length;$("todayCount").value=todayN;
- const target=Math.max(1,+$("target").value||300),p=Math.min(100,todayN/target*100);$("todayBar").style.width=p+"%";$("todayText").textContent=todayN+" / "+target+" ("+p.toFixed(1)+"%)";
- $("months").innerHTML=MONTHS.map((m,i)=>{let f=monthFound(i),c=monthCounts[i],p=c?Math.min(100,f/c*100):0;return `<div class="barrow"><b>${m}</b><div class="bar"><i style="width:${p}%"></i></div><span>${f}/${c} • ${p.toFixed(0)}%</span></div>`}).join("");
+const USERS={admin:{password:"admin123",name:"Administrator",role:"ADMIN",area:"ALL"},scanner01:{password:"scan123",name:"อนัญญา",role:"SCANNER",area:"GNR1"}};
+const sample=[];for(let i=0;i<60;i++)sample.push({barcode:"010014"+String(7330+i).padStart(4,"0")+"M",plate:"1ขช "+(7330+i),month:i%12});
+let hist=JSON.parse(localStorage.getItem("VRB_V3_HISTORY")||"[]"),current=JSON.parse(sessionStorage.getItem("VRB_V3_USER")||"null");
+function today(){return new Date().toLocaleDateString("th-TH")}function time(){return new Date().toLocaleTimeString("th-TH",{hour12:false})}function save(){localStorage.setItem("VRB_V3_HISTORY",JSON.stringify(hist))}
+function visible(){return current?.role==="SCANNER"?hist.filter(x=>x.inspector===current.name&&x.area===current.area):hist}
+function login(){let u=$("user").value.trim().toLowerCase(),p=$("pass").value;if(!USERS[u]||USERS[u].password!==p){$("loginErr").style.display="block";$("loginErr").textContent="❌ Username หรือ Password ไม่ถูกต้อง";return}current={username:u,name:USERS[u].name,role:USERS[u].role,area:USERS[u].area};sessionStorage.setItem("VRB_V3_USER",JSON.stringify(current));init()}
+function init(){$("login").classList.add("hidden");$("logout").classList.remove("hidden");$("userPill").textContent=`👤 ${current.name} • ${current.role} • ${current.area}`;$("inspector").value=current.name;$("area").value=current.area;render();focusScan()}
+function logout(){sessionStorage.removeItem("VRB_V3_USER");location.reload()}
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>go(b.dataset.page));function go(p){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(p).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===p));if(p==="scan")focusScan()}
+$("pass").addEventListener("keydown",e=>{if(e.key==="Enter")login()});$("barcode").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();scan(e.target.value)}});function focusScan(){setTimeout(()=>$("barcode").focus(),80)}
+function scan(raw){let code=String(raw||"").replace(/[\r\n\t]/g,"").trim().toUpperCase();if(!code)return focusScan();let v=sample.find(x=>x.barcode===code),d=today(),t=time();if(!v){hist.unshift({barcode:code,plate:"-",month:null,inspector:current.name,area:current.area,date:d,time:t,ok:false,unknown:true});save();$("status").className="status err";$("status").innerHTML=`❌ <b>ไม่พบ Barcode</b> ${code}`;render();clear();return}if(hist.some(x=>x.ok&&x.barcode===code)){hist.unshift({barcode:code,plate:v.plate,month:v.month,inspector:current.name,area:current.area,date:d,time:t,ok:false,duplicate:true});save();$("status").className="status warn";$("status").innerHTML=`⚠️ <b>${v.plate}</b> ตรวจแล้ว — ไม่เพิ่มยอด`;render();clear();return}hist.unshift({barcode:code,plate:v.plate,month:v.month,inspector:current.name,area:current.area,date:d,time:t,ok:true});save();$("status").className="status ok";$("status").innerHTML=`✓ <b>บันทึกแล้ว</b> — ${v.plate} • ${code}`;render();clear()}
+function clear(){$("barcode").value="";focusScan()}
+function master(){let a=[];for(let i=0;i<TOTAL;i++){let m=i%12,s=sample[i%sample.length];a.push(i<sample.length?s:{barcode:"AUTO-"+String(i+1).padStart(4,"0"),plate:"ทะเบียน-"+String(i+1).padStart(4,"0"),month:m})}return a}
+function render(){let h=visible(),f=h.filter(x=>x.ok).length,t=h.filter(x=>x.date===today()).length,d=h.filter(x=>x.duplicate).length,u=h.filter(x=>x.unknown).length,p=f/TOTAL*100;$("all").textContent=TOTAL;$("found").textContent=f;$("remain").textContent=TOTAL-f;$("today").textContent=t;$("dup").textContent=d;$("unknown").textContent=u;$("pct").textContent=p.toFixed(1)+"%";$("pctbar").style.width=Math.min(100,p)+"%";$("remainText").textContent=(TOTAL-f)+" เล่ม";$("targetText").textContent=t+" / 300 เล่ม";
+$("months").innerHTML=MONTHS.map((m,i)=>{let n=h.filter(x=>x.ok&&x.month===i).length,c=monthCounts[i],q=n/c*100;return `<div class="month"><b>${m}</b><div class="bar"><i style="width:${Math.min(100,q)}%"></i></div><span>${n}/${c}</span></div>`}).join("");
+let rs=($("remSearch").value||"").toLowerCase(),rm=$("remMonth").value,vs=($("vehSearch").value||"").toLowerCase(),vm=$("vehMonth").value,rows=master();
+$("remTable").innerHTML=rows.filter(v=>(!rs||(v.barcode+" "+v.plate).toLowerCase().includes(rs))&&(rm===""||+rm===v.month)&&!h.some(x=>x.ok&&x.barcode===v.barcode)).slice(0,400).map(v=>`<tr><td>${v.barcode}</td><td>${v.plate}</td><td>${MONTHS[v.month]}</td><td><span class="badge gray">ยังไม่ตรวจ</span></td></tr>`).join("")||"<tr><td colspan=4>ไม่พบรายการ</td></tr>";
+$("vehTable").innerHTML=rows.filter(v=>(!vs||(v.barcode+" "+v.plate).toLowerCase().includes(vs))&&(vm===""||+vm===v.month)).slice(0,400).map(v=>{let x=h.find(z=>z.ok&&z.barcode===v.barcode);return `<tr><td>${v.barcode}</td><td>${v.plate}</td><td>${MONTHS[v.month]}</td><td><span class="badge ${x?"green":"gray"}">${x?"พบเล่ม":"ยังไม่ตรวจ"}</span></td><td>${x?.inspector||"-"}</td><td>${x?.time||"-"}</td></tr>`}).join("");
+$("histTable").innerHTML=h.map(x=>`<tr><td>${x.date}</td><td>${x.time}</td><td>${x.barcode}</td><td>${x.plate}</td><td>${x.month==null?"-":MONTHS[x.month]}</td><td>${x.inspector}</td><td>${x.area}</td><td><span class="badge ${x.ok?"green":x.duplicate?"orange":"red"}">${x.ok?"พบเล่ม":x.duplicate?"ตรวจซ้ำ":"ไม่พบ"}</span></td></tr>`).join("")||"<tr><td colspan=8>ยังไม่มีประวัติ</td></tr>";
+$("recent").innerHTML=h.slice(0,7).map(x=>`<div style="padding:6px 0;border-bottom:1px solid #edf1f5"><b>${x.plate||x.barcode}</b><br><span class="muted">${x.time} • ${x.ok?"✓ พบเล่ม":x.duplicate?"⚠ ซ้ำ":"✕ ไม่พบ"}</span></div>`).join("")||"<span class='muted'>ยังไม่มีรายการ</span>";
 }
-function statusFor(v){let x=hist.find(h=>h.ok&&h.barcode===v.barcode);return x?"พบเล่ม":"ยังไม่ตรวจ"}
-function renderVehicles(){
- let q=($("search").value||"").toLowerCase(),mf=$("monthFilter").value;
- let rows=[];for(let i=0;i<1936;i++){let m=i%12;let v=sample[i%sample.length];let barcode=i<40?v.barcode:"AUTO-"+String(i+1).padStart(4,"0");let plate=i<40?v.plate:"ทะเบียน-"+String(i+1).padStart(4,"0");let fake={barcode,plate,month:m};if(q&&!((barcode+" "+plate).toLowerCase().includes(q)))continue;if(mf!==""&&+mf!==m)continue;let h=hist.find(x=>x.ok&&x.barcode===barcode);rows.push({v:fake,h});if(rows.length>=250)break}
- $("vehicleTable").innerHTML=rows.map(r=>`<tr><td>${r.v.barcode}</td><td>${r.v.plate}</td><td>${MONTHS[r.v.month]}</td><td><span class="badge ${r.h?"found":"pending"}">${r.h?"พบเล่ม":"ยังไม่ตรวจ"}</span></td><td>${r.h?r.h.inspector:"-"}</td><td>${r.h?r.h.time:"-"}</td></tr>`).join("")||"<tr><td colspan=6>ไม่พบข้อมูล</td></tr>";
-}
-function renderHistory(){
- const visibleHist=currentUser&&currentUser.role==="SCANNER"?hist.filter(x=>x.inspector===currentUser.name&&x.area===currentUser.area):hist; $("historyTable").innerHTML=visibleHist.map(x=>`<tr><td>${x.date}</td><td>${x.time}</td><td>${x.barcode}</td><td>${x.plate||"-"}</td><td>${MONTHS[x.month]||"-"}</td><td>${x.inspector}</td><td>${x.area}</td><td><span class="badge ${x.ok?"found":x.duplicate?"dup":"unknown"}">${x.ok?"พบเล่ม":x.duplicate?"ตรวจซ้ำ":"ไม่พบ"}</span></td></tr>`).join("")||"<tr><td colspan=8>ยังไม่มีประวัติ</td></tr>";
- const visibleMini=currentUser&&currentUser.role==="SCANNER"?hist.filter(x=>x.inspector===currentUser.name&&x.area===currentUser.area):hist; $("miniHistory").innerHTML=visibleMini.slice(0,8).map(x=>`<div style="padding:7px 0;border-bottom:1px solid #edf1f5"><b>${x.plate||x.barcode}</b><br><span class="muted">${x.time} • ${x.inspector} • ${x.ok?"✓ พบเล่ม":"⚠ "+(x.duplicate?"ซ้ำ":"ไม่พบ")}</span></div>`).join("")||'<span class="muted">ยังไม่มีรายการ</span>';
-}
-function scan(raw){
- if(!currentUser){$("loginOverlay").style.display="flex";return}
- let code=String(raw||"").trim();if(!code){focusScan();return}
- let v=sample.find(x=>x.barcode.toUpperCase()===code.toUpperCase());
- let inspector=currentUser?currentUser.name:($("inspector").value.trim()||"ไม่ระบุ"),area=currentUser?currentUser.area:($("area").value.trim()||"ไม่ระบุ"),d=today(),t=time();
- if(!v){hist.unshift({barcode:code,plate:"-",month:null,inspector,area,date:d,time:t,ok:false});save();$("scanStatus").className="status err";$("scanStatus").innerHTML=`❌ <b>ไม่พบ Barcode</b> ${code} ใน Master`;$("lastResult").innerHTML=`<div class="bigResult">❌ ไม่พบข้อมูล</div><div class="muted">${code}</div>`;renderAll();clearInput();return}
- if(hist.some(x=>x.ok&&x.barcode===v.barcode)){hist.unshift({barcode:v.barcode,plate:v.plate,month:v.month,inspector,area,date:d,time:t,ok:false,duplicate:true});save();$("scanStatus").className="status warn";$("scanStatus").innerHTML=`⚠️ <b>${v.plate}</b> เคยตรวจแล้ว — ไม่เพิ่มยอดตรวจ`;$("lastResult").innerHTML=`<div class="bigResult">⚠️ ตรวจซ้ำ</div><div>${v.plate} • ${v.barcode}</div>`;renderAll();clearInput();return}
- hist.unshift({barcode:v.barcode,plate:v.plate,month:v.month,inspector,area,date:d,time:t,ok:true});save();
- $("scanStatus").className="status ok";$("scanStatus").innerHTML=`✓ <b>บันทึกอัตโนมัติแล้ว</b> — ${v.plate}<br><span class="muted">${v.barcode} • ${MONTHS[v.month]} • ${t}</span>`;
- $("lastResult").innerHTML=`<div class="bigResult">✓ พบเล่ม</div><div style="margin-top:6px"><b>${v.plate}</b></div><div class="muted">${v.barcode} • ${MONTHS[v.month]} • ${inspector} • ${area}<br>${d} ${t}</div>`;
- renderAll();clearInput();
-}
-function clearInput(){$("barcode").value="";focusScan()}
-function focusScan(){setTimeout(()=>$("barcode").focus(),60)}
-$("barcode").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();scan(e.target.value)}});
-let timer,last="";$("barcode").addEventListener("input",e=>{let v=e.target.value;if(v.length<6)return;clearTimeout(timer);last=v;timer=setTimeout(()=>{if(e.target.value===last)scan(e.target.value)},160)});
-$("target").addEventListener("input",renderDashboard);$("search").addEventListener("input",renderVehicles);$("monthFilter").addEventListener("change",renderVehicles);
-$("testButtons").innerHTML=sample.slice(0,6).map(v=>`<button class="btn2" onclick="scan('${v.barcode}')">${v.barcode}</button>`).join("");
-$("monthFilter").innerHTML+='<option value="'+MONTHS.map((_,i)=>i).join('">').replace(/"/g,"")+'">'; // replaced below
-$("monthFilter").innerHTML='<option value="">ทุกเดือน</option>'+MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
-function renderAll(){renderDashboard();renderVehicles();renderHistory()}
-function exportCSV(){let head=["วันที่","เวลา","Barcode","ทะเบียน","เดือน","ผู้ตรวจ","พื้นที่","ผล"];let rows=hist.map(x=>[x.date,x.time,x.barcode,x.plate||"",MONTHS[x.month]||"",x.inspector,x.area,x.ok?"พบเล่ม":x.duplicate?"ตรวจซ้ำ":"ไม่พบ"]);let csv="\ufeff"+[head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="Vehicle_Registration_Scan_History.csv";a.click()}
-function clearDemo(){if(confirm("ล้างประวัติการทดลองทั้งหมด?")){hist=[];save();renderAll();$("scanStatus").className="status";$("scanStatus").textContent="ล้างแล้ว พร้อมสแกนใหม่";focusScan()}}
-renderAll();focusScan();
-</script></body></html>
+function exportCSV(){let h=visible(),head=["วันที่","เวลา","Barcode","ทะเบียน","เดือน","ผู้ตรวจ","หน่วยงาน","ผล"],rows=h.map(x=>[x.date,x.time,x.barcode,x.plate,x.month==null?"":MONTHS[x.month],x.inspector,x.area,x.ok?"พบเล่ม":x.duplicate?"ตรวจซ้ำ":"ไม่พบ"]),csv="\ufeff"+[head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n"),a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="VRB_Scan_History.csv";a.click()}
+["remSearch","remMonth","vehSearch","vehMonth"].forEach(id=>$(id).addEventListener("input",render));
+function filters(){for(let id of ["remMonth","vehMonth"])$(id).innerHTML='<option value="">ทุกเดือน</option>'+MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join("")}
+$("test").innerHTML=sample.slice(0,6).map(v=>`<button class="btn2" onclick="scan('${v.barcode}')">${v.barcode}</button>`).join("");filters();if(current)init();else $("user").focus();
+</script>
+</body>
+</html>
