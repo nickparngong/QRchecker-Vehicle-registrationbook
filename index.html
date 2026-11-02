@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vehicle Registration Book Scanner V4.1 Central Monthly</title>
+<title>Vehicle Registration Book Scanner V4.1.2 Central Monthly</title>
 <style>
 :root{--navy:#08244a;--blue:#1769ff;--orange:#ef6c1b;--green:#149b67;--red:#d9362e;--bg:#eef3f8;--line:#cfdae6;--text:#10243d;--muted:#66788e}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,"Noto Sans Thai",sans-serif}
@@ -23,7 +23,7 @@ textarea{min-height:130px;font-family:monospace;font-size:12px}.notice{padding:9
 </style>
 </head>
 <body>
-<div id="login" class="login"><div class="loginbox"><div class="loginIcon">🔐</div><h2>Vehicle Registration Book Scanner</h2><div class="muted" style="text-align:center">V4 • Central Google Sheets + HID Keyboard Mode</div><label>Username</label><input id="lu" value="scanner01"><label>Password</label><input id="lp" type="password" value="scan123"><button class="btn" style="width:100%;margin-top:12px" onclick="login()">🔓 Login เพื่อเริ่มงาน</button><div id="loginErr" class="notice hidden" style="background:#fff0ee;color:#9e2118"></div><div class="muted" style="text-align:center;margin-top:10px">Admin: admin / admin123 • Scanner: scanner01 / scan123</div><div class="muted" style="text-align:center;margin-top:6px">ข้อมูลทั้งหมดอ่าน/บันทึกผ่าน Google Sheets กลาง</div></div></div>
+<div id="login" class="login"><div class="loginbox"><div class="loginIcon">🔐</div><h2>Vehicle Registration Book Scanner</h2><div class="muted" style="text-align:center">V4.1.2 • Central Google Sheets + HID Keyboard Mode</div><label>Username</label><input id="lu" value="scanner01"><label>Password</label><input id="lp" type="password" value="scan123"><button class="btn" style="width:100%;margin-top:12px" onclick="login()">🔓 Login เพื่อเริ่มงาน</button><div id="loginErr" class="notice hidden" style="background:#fff0ee;color:#9e2118"></div><div class="muted" style="text-align:center;margin-top:10px">Admin: admin / admin123 • Scanner: scanner01 / scan123</div><div class="muted" style="text-align:center;margin-top:6px">ข้อมูลทั้งหมดอ่าน/บันทึกผ่าน Google Sheets กลาง</div></div></div>
 
 <header class="top"><div class="brand">📚 Vehicle Registration Book Scanner V4.1 Central Monthly</div><div class="sub">ระบบตรวจนับเล่มทะเบียนรถ • Barcode Scanner • Dynamic Master • Dashboard</div><div class="userbar"><span id="syncState" class="pill">ยังไม่เชื่อมต่อฐานข้อมูล</span><span id="userPill" class="pill">ยังไม่ได้ Login</span><button id="logout" class="danger hidden" onclick="logout()">ออกจากระบบ</button></div></header>
 <nav class="nav">
@@ -195,24 +195,25 @@ async function scan(raw){
   $("scanStatus").className="status warn";$("scanStatus").textContent="กำลังบันทึกลง Google Sheets...";
   try{
     const data=await api("scan",{lookup:code,result:"พบเล่ม",inspector:user.name,area:user.area});
-    await refreshFromServer(false);
-    // Compatibility: older Apps Script deployments may omit the boolean `found`.
-    // Verify against the freshly loaded central VEHICLES master before declaring unknown.
-    const matchedVehicle=master.find(v=>normBC(v.barcode)===code && v.status!=="Inactive");
-    const isFound=!!matchedVehicle || data.found===true;
-    const isDuplicate=data.duplicate===true;
-    if(!isFound){
+    const refreshed=await refreshFromServer(false);
+    // Some deployed Apps Script versions return ok:true but omit/rename `found`.
+    // Trust the freshly reloaded central Master as a second confirmation.
+    const matchedVehicle=master.find(v=>normBC(v.barcode)===code);
+    const responseFound=(data.found===true || String(data.found).toLowerCase()==="true");
+    const confirmedFound=responseFound || !!matchedVehicle || !!data.vehicle;
+    const plate=(data.vehicle&&data.vehicle["ทะเบียน"]) || (matchedVehicle&&matchedVehicle.plate) || code;
+    if(!confirmedFound){
       $("scanStatus").className="status err";
-      $("scanStatus").innerHTML=`❌ <b>ไม่พบ Barcode ในฐานข้อมูลกลาง</b> — ${code}`;
+      $("scanStatus").innerHTML=`❌ <b>ไม่พบ Barcode ในฐานข้อมูลกลาง</b> — ${code}<br><small>API found=${esc(String(data.found))} • Master=${master.length} รายการ • refresh=${refreshed?"สำเร็จ":"ไม่สำเร็จ"}</small>`;
       $("last").innerHTML=`<b style="color:#b91c1c">ไม่พบข้อมูลรถ</b><br>${code}`;
-    }else if(isDuplicate){
+    }else if(data.duplicate===true || String(data.duplicate).toLowerCase()==="true"){
       $("scanStatus").className="status warn";
-      $("scanStatus").innerHTML=`⚠️ <b>ตรวจซ้ำในรอบนี้</b> — ${data.vehicle?.["ทะเบียน"]||matchedVehicle?.plate||code}`;
-      $("last").innerHTML=`<b style="color:#934900">มีประวัติการตรวจแล้วในรอบนี้</b><br>${data.vehicle?.["ทะเบียน"]||matchedVehicle?.plate||code}`;
+      $("scanStatus").innerHTML=`⚠️ <b>ตรวจซ้ำในรอบนี้</b> — ${plate}`;
+      $("last").innerHTML=`<b style="color:#934900">มีประวัติการตรวจแล้วในรอบนี้</b><br>${plate}`;
     }else{
       $("scanStatus").className="status ok";
-      $("scanStatus").innerHTML=`✓ <b>บันทึกลงฐานข้อมูลกลางแล้ว</b> — ${data.vehicle?.["ทะเบียน"]||matchedVehicle?.plate||code} • ${code}`;
-      $("last").innerHTML=`<b style="color:#126a45">พบเล่มและบันทึกแล้ว</b><br>${data.vehicle?.["ทะเบียน"]||matchedVehicle?.plate||""}<br><span class="muted">${code}</span>`;
+      $("scanStatus").innerHTML=`✓ <b>บันทึกลงฐานข้อมูลกลางแล้ว</b> — ${data.vehicle?.["ทะเบียน"]||code} • ${code}`;
+      $("last").innerHTML=`<b style="color:#126a45">พบเล่มและบันทึกแล้ว</b><br>${plate}<br><span class="muted">${code}</span>`;
     }
   }catch(e){
     await refreshFromServer(false);
