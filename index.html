@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vehicle Registration Book Scanner V3.3</title>
+<title>Vehicle Registration Book Scanner V4.1 Central Monthly</title>
 <style>
 :root{--navy:#08244a;--blue:#1769ff;--orange:#ef6c1b;--green:#149b67;--red:#d9362e;--bg:#eef3f8;--line:#cfdae6;--text:#10243d;--muted:#66788e}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,"Noto Sans Thai",sans-serif}
@@ -23,9 +23,9 @@ textarea{min-height:130px;font-family:monospace;font-size:12px}.notice{padding:9
 </style>
 </head>
 <body>
-<div id="login" class="login"><div class="loginbox"><div class="loginIcon">🔐</div><h2>Vehicle Registration Book Scanner</h2><div class="muted" style="text-align:center">V3.3 • Dynamic Master + HID Keyboard Mode</div><label>Username</label><input id="lu" value="scanner01"><label>Password</label><input id="lp" type="password" value="scan123"><button class="btn" style="width:100%;margin-top:12px" onclick="login()">🔓 Login เพื่อเริ่มงาน</button><div id="loginErr" class="notice hidden" style="background:#fff0ee;color:#9e2118"></div><div class="muted" style="text-align:center;margin-top:10px">Admin: admin / admin123 • Scanner: scanner01 / scan123</div><div class="muted" style="text-align:center;margin-top:6px">Master จะรวมข้อมูลใหม่กับข้อมูลเดิมอัตโนมัติ</div></div></div>
+<div id="login" class="login"><div class="loginbox"><div class="loginIcon">🔐</div><h2>Vehicle Registration Book Scanner</h2><div class="muted" style="text-align:center">V4 • Central Google Sheets + HID Keyboard Mode</div><label>Username</label><input id="lu" value="scanner01"><label>Password</label><input id="lp" type="password" value="scan123"><button class="btn" style="width:100%;margin-top:12px" onclick="login()">🔓 Login เพื่อเริ่มงาน</button><div id="loginErr" class="notice hidden" style="background:#fff0ee;color:#9e2118"></div><div class="muted" style="text-align:center;margin-top:10px">Admin: admin / admin123 • Scanner: scanner01 / scan123</div><div class="muted" style="text-align:center;margin-top:6px">ข้อมูลทั้งหมดอ่าน/บันทึกผ่าน Google Sheets กลาง</div></div></div>
 
-<header class="top"><div class="brand">📚 Vehicle Registration Book Scanner V3.3</div><div class="sub">ระบบตรวจนับเล่มทะเบียนรถ • Barcode Scanner • Dynamic Master • Dashboard</div><div class="userbar"><span id="userPill" class="pill">ยังไม่ได้ Login</span><button id="logout" class="danger hidden" onclick="logout()">ออกจากระบบ</button></div></header>
+<header class="top"><div class="brand">📚 Vehicle Registration Book Scanner V4.1 Central Monthly</div><div class="sub">ระบบตรวจนับเล่มทะเบียนรถ • Barcode Scanner • Dynamic Master • Dashboard</div><div class="userbar"><span id="syncState" class="pill">ยังไม่เชื่อมต่อฐานข้อมูล</span><span id="userPill" class="pill">ยังไม่ได้ Login</span><button id="logout" class="danger hidden" onclick="logout()">ออกจากระบบ</button></div></header>
 <nav class="nav">
 <button class="active" data-page="dashboard">🏠 Dashboard</button><button data-page="scan">🔫 Scan Barcode</button><button data-page="remaining">📋 เล่มคงเหลือ</button><button data-page="vehicles">🚗 Vehicle List</button><button data-page="history">📜 Scan History</button><button id="adminNav" data-page="master" class="hidden">⚙️ Master รถ</button>
 </nav>
@@ -34,8 +34,9 @@ textarea{min-height:130px;font-family:monospace;font-size:12px}.notice{padding:9
 <section id="dashboard" class="page active">
 <div class="heroGrid"><div class="hero blue"><h2>📚 REGISTRATION BOOK COUNT</h2><div class="muted" style="color:#fff">ฐานรถสามารถเพิ่ม/แก้ไขได้ ไม่ล็อกจำนวน 1,936 คัน</div><div class="stats"><div class="stat"><span>รถ/เล่มทั้งหมด</span><b id="total">0</b></div><div class="stat"><span>ตรวจแล้ว</span><b id="found">0</b></div><div class="stat"><span>คงเหลือ</span><b id="remain">0</b></div></div></div>
 <div class="hero orange"><h2>🔫 SCAN COUNT</h2><div class="muted" style="color:#fff">ยิง → Auto Save → พร้อมยิงต่อทันที</div><div class="stats"><div class="stat"><span>วันนี้</span><b id="today">0</b></div><div class="stat"><span>ตรวจซ้ำ</span><b id="dup">0</b></div><div class="stat"><span>ไม่พบ</span><b id="unknown">0</b></div></div></div></div>
+<div class="card" style="margin:12px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b>รอบตรวจประจำเดือน: <span id="cycleLabel">-</span></b><div class="muted">รีเซตเพื่อเริ่มนับใหม่ โดยเก็บประวัติรอบเก่าไว้ใน Google Sheets</div></div><button id="resetMonthBtn" class="danger" onclick="resetMonth()">↻ รีเซตรอบตรวจเดือนนี้</button></div>
 <div class="title">REGISTRATION BOOK COUNT WORKFLOW</div><div class="workflow"><div class="step"><span class="num">1</span><b>Master รถ</b><small>เพิ่มได้ไม่จำกัด</small></div><div class="step"><span class="num">2</span><b>Login</b><small>กำหนดสิทธิ์</small></div><div class="step"><span class="num">3</span><b>Scan</b><small>USB/HID</small></div><div class="step"><span class="num">4</span><b>ค้นหา</b><small>Barcode</small></div><div class="step"><span class="num">5</span><b>Auto Save</b><small>วัน/เวลา</small></div><div class="step"><span class="num">6</span><b>Duplicate</b><small>กันนับซ้ำ</small></div><div class="step"><span class="num">7</span><b>Dashboard</b><small>อัปเดตทันที</small></div><div class="step"><span class="num">8</span><b>Remaining</b><small>คงเหลือ</small></div></div>
-<div class="grid2" style="margin-top:8px"><div class="card"><b>📊 จำนวนตามเดือนจดทะเบียน</b><div id="months"></div></div><div class="card"><b>🔐 สิทธิ์การใช้งาน</b><div class="notice">SCANNER: Scan + ดูประวัติตัวเอง • แก้ Master ไม่ได้</div><div class="notice">ADMIN: เพิ่ม/แก้ไข/ปิดใช้งานรถ + Import CSV + Export Master</div><div class="notice">ข้อมูล Master ที่เพิ่มจากหน้านี้เก็บใน Browser ของเครื่องนี้สำหรับ Prototype</div></div></div>
+<div class="grid2" style="margin-top:8px"><div class="card"><b>📊 จำนวนตามเดือนจดทะเบียน</b><div id="months"></div></div><div class="card"><b>🔐 สิทธิ์การใช้งาน</b><div class="notice">SCANNER: Scan + ดูประวัติตัวเอง • แก้ Master ไม่ได้</div><div class="notice">ADMIN: เพิ่ม/แก้ไข/ปิดใช้งานรถ + Import CSV + Export Master</div><div class="notice">ข้อมูล ข้อมูล Master ที่เพิ่มจากหน้านี้จะบันทึกลง Google Sheets กลาง</div></div></div>
 </section>
 
 <section id="scan" class="page"><div class="grid2"><div class="card"><h2>🔫 SCAN BARCODE</h2><div class="row"><div><label>ผู้ตรวจ</label><input id="inspector" disabled></div><div><label>หน่วยงาน</label><input id="area" disabled></div></div><label>Barcode</label><input id="barcode" class="scanInput" autofocus placeholder="ยิง Barcode แล้ว Enter"><div class="muted">USB/HID: ยิง → Enter → บันทึกอัตโนมัติ → เคลียร์ช่อง → พร้อมยิงเล่มต่อไป • อ่านจาก HID Key Code จึงไม่ขึ้นกับภาษาไทย/อังกฤษของ Windows</div><div id="scanStatus" class="status">พร้อมสแกน</div><div class="actions"><button class="btn2" onclick="demo('0100018137M')">ทดสอบ 0100018137M</button><button class="btn2" onclick="demo('0100147330M')">ทดสอบ 0100147330M</button><button class="btn2" onclick="diagnose()">🔎 ตรวจ Master</button></div></div><div class="card"><h3>📌 ผลล่าสุด</h3><div id="last">ยังไม่มีรายการ</div><hr><h3>⚡ รายการล่าสุด</h3><div id="recent"></div></div></div></section>
@@ -65,34 +66,81 @@ function normBC(v){
   s=s.split("").map(ch=>THAI_TO_LATIN[ch]||ch).join("");
   return s;
 }
-function loadMaster(){
-  let saved=null;
-  try{ saved=JSON.parse(localStorage.getItem("VRB_MASTER_V33")||"null"); }catch(e){}
-  if(!Array.isArray(saved)) saved=[];
-  // Merge current Master seed with any previously saved Master.
-  // This prevents an older browser cache from hiding newly supplied vehicles.
-  const map=new Map();
-  [...SEED,...saved].forEach(v=>{
-    if(!v || !v.barcode) return;
-    const bc=normBC(v.barcode);
-    if(!map.has(bc)) map.set(bc,{barcode:bc,plate:String(v.plate??"").trim(),month:v.month??null,status:v.status||"Active"});
-    else{
-      const cur=map.get(bc);
-      if(!cur.plate && v.plate) cur.plate=String(v.plate).trim();
-      if(!cur.month && v.month) cur.month=v.month;
-    }
-  });
-  const result=[...map.values()];
-  localStorage.setItem("VRB_MASTER_V33",JSON.stringify(result));
-  return result;
-}
-let master=loadMaster();
-let hist=JSON.parse(localStorage.getItem("VRB_HISTORY_V33")||"[]");
+
+const API_URL = "https://script.google.com/macros/s/AKfycbxRV7OShwPWWOYeZg1StYI-TRgpxj50NMFXBFCN3pdft4cQ9mnR24keqJg2Cfho9a4v3A/exec";
+let master=[];
+let hist=[];
 let user=JSON.parse(sessionStorage.getItem("VRB_USER_V33")||"null");
-function save(){localStorage.setItem("VRB_MASTER_V33",JSON.stringify(master));localStorage.setItem("VRB_HISTORY_V33",JSON.stringify(hist))}
+let lastSyncAt=null, syncing=false, currentMonthKey="", currentRound=1;
+function api(action, params={}) {
+  return new Promise((resolve,reject)=>{
+    const cb="vrb_cb_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+    const script=document.createElement("script");
+    const timer=setTimeout(()=>{cleanup();reject(new Error("เชื่อมต่อ Google Sheets ไม่สำเร็จ (timeout)"));},20000);
+    function cleanup(){clearTimeout(timer);delete window[cb];script.remove();}
+    window[cb]=(data)=>{cleanup(); if(data&&data.ok===false) reject(new Error(data.error||"API error")); else resolve(data);};
+    const q=new URLSearchParams({action,callback:cb,...Object.fromEntries(Object.entries(params).map(([k,v])=>[k,String(v??"")]))});
+    script.onerror=()=>{cleanup();reject(new Error("โหลดข้อมูลจาก Google Apps Script ไม่สำเร็จ"));};
+    script.src=API_URL+"?"+q.toString();
+    document.head.appendChild(script);
+  });
+}
+function fromServerVehicle(v){
+  const monthRaw=v["เดือนจดทะเบียน"]||v.month||"";
+  let month=Number(String(monthRaw).replace(/[^\d]/g,""));
+  if(month<1||month>12) month=null;
+  return {
+    barcode:normBC(v.Barcode||v.QRCode||v.VehicleID||v.barcode||""),
+    plate:String(v["ทะเบียน"]||v.plate||"").trim(),
+    month,
+    status:(String(v["สถานะ"]||v.status||"").trim()==="Inactive" || String(v["สถานะ"]||v.status||"").includes("ยกเลิก"))?"Inactive":"Active",
+    inspector:v["ผู้ตรวจล่าสุด"]||"",
+    date:v["วันที่ตรวจล่าสุด"]||"",
+    time:v["เวลาตรวจล่าสุด"]||"",
+    area:v["พื้นที่"]||""
+  };
+}
+function fromServerHistory(x){
+  const result=String(x["ผลการตรวจ"]||x.result||"");
+  const code=normBC(x["QR_Code"]||x.Barcode||x["QRCode"]||"");
+  return {
+    date:x["วันที่"]||x.date||"",
+    time:x["เวลา"]||x.time||"",
+    barcode:code,
+    plate:x["ทะเบียน"]||x.plate||"-",
+    month:null,
+    monthKey:x["MonthKey"]||"", round:Number(x["Round"]||1),
+    inspector:x["ผู้ตรวจ"]||x.inspector||"",
+    area:x["พื้นที่"]||x.area||"",
+    ok:result==="พบเล่ม",
+    duplicate:result==="ตรวจซ้ำ",
+    unknown:result==="ไม่พบข้อมูล" || result==="ไม่พบ"
+  };
+}
+async function refreshFromServer(showError=false){
+  if(syncing)return;
+  syncing=true;
+  try{
+    const data=await api("getall");
+    currentMonthKey=data.monthKey||""; currentRound=Number(data.round||1);
+    master=(data.vehicles||[]).map(fromServerVehicle).filter(v=>v.barcode);
+    hist=(data.history||[]).map(fromServerHistory).map(x=>({...x,month:(master.find(v=>v.barcode===x.barcode)||{}).month||null})).reverse();
+    lastSyncAt=new Date();
+    render();
+    const el=document.getElementById("syncState");
+    if(el) el.textContent="ฐานข้อมูลกลาง • "+currentMonthKey+" รอบ "+currentRound+" • อัปเดต "+lastSyncAt.toLocaleTimeString("th-TH");
+    return true;
+  }catch(e){
+    const el=document.getElementById("syncState");
+    if(el) {el.textContent="เชื่อมต่อฐานข้อมูลไม่ได้: "+e.message;el.style.color="#b91c1c";}
+    if(showError) alert("ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้\n"+e.message);
+    return false;
+  }finally{syncing=false;}
+}
+function save(){ /* ข้อมูลจริงบันทึกผ่าน Apps Script ลง Google Sheets เท่านั้น */ }
 function nowDate(){return new Date().toLocaleDateString("th-TH")}function nowTime(){return new Date().toLocaleTimeString("th-TH",{hour12:false})}
 function login(){let u=$("lu").value.trim().toLowerCase(),p=$("lp").value;if(!USERS[u]||USERS[u].password!==p){$("loginErr").classList.remove("hidden");$("loginErr").textContent="❌ Username หรือ Password ไม่ถูกต้อง";return}user={username:u,name:USERS[u].name,role:USERS[u].role,area:USERS[u].area};sessionStorage.setItem("VRB_USER_V33",JSON.stringify(user));init()}
-function init(){$("login").classList.add("hidden");$("logout").classList.remove("hidden");$("userPill").textContent=`👤 ${user.name} • ${user.role} • ${user.area}`;$("inspector").value=user.name;$("area").value=user.area;if(user.role==="ADMIN")$("adminNav").classList.remove("hidden");render();focusScan()}
+async function init(){$("login").classList.add("hidden");$("logout").classList.remove("hidden");$("userPill").textContent=`👤 ${user.name} • ${user.role} • ${user.area}`;$("inspector").value=user.name;$("area").value=user.area;if(user.role==="ADMIN"){$("adminNav").classList.remove("hidden");$("resetMonthBtn")?.classList.remove("hidden");}else{$("resetMonthBtn")?.classList.add("hidden");}await refreshFromServer(true);focusScan();}
 function logout(){sessionStorage.removeItem("VRB_USER_V33");location.reload()}
 function $(id){return document.getElementById(id)}
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>go(b.dataset.page));function go(p){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(p).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===p));if(p==="scan")focusScan();render()}
@@ -140,9 +188,37 @@ function diagnose(){
     : `❌ ยังไม่พบ 0100018137M ใน Master (${master.length} รายการ)`;
 }
 function demo(x){$("barcode").value=x;scan(x)}
-function scan(raw){let code=normBC(raw);hidBuffer="";$("barcode").value="";if(!code)return focusScan();let v=master.find(x=>normBC(x.barcode)===code&&x.status!=="Inactive"),d=nowDate(),t=nowTime();if(!v){hist.unshift({date:d,time:t,barcode:code,plate:"-",month:null,inspector:user.name,area:user.area,ok:false,unknown:true});save();$("scanStatus").className="status err";$("scanStatus").innerHTML=`❌ <b>ไม่พบ Barcode ใน Master</b> — ${code}<br><span class="muted">ถ้าเครื่องส่งภาษาไทย ระบบจะแปลง Keyboard Layout ให้อัตโนมัติ</span>`;$("last").innerHTML=`<b style="color:#a1221b">ไม่พบข้อมูล</b><br>${code}`;render();return focusScan()}let old=hist.find(x=>x.ok&&x.barcode===code);if(old){hist.unshift({date:d,time:t,barcode:code,plate:v.plate,month:v.month,inspector:user.name,area:user.area,ok:false,duplicate:true});save();$("scanStatus").className="status warn";$("scanStatus").innerHTML=`⚠️ <b>ตรวจซ้ำ</b> — ${v.plate} • ${code}<br>ครั้งแรก ${old.date} ${old.time}`;render();return focusScan()}hist.unshift({date:d,time:t,barcode:code,plate:v.plate,month:v.month,inspector:user.name,area:user.area,ok:true});save();$("scanStatus").className="status ok";$("scanStatus").innerHTML=`✓ <b>บันทึกแล้ว</b> — ${v.plate} • ${code}`;$("last").innerHTML=`<b style="color:#126a45">พบเล่มและบันทึกแล้ว</b><br>${v.plate}<br><span class="muted">${code} • ${MONTHS[(v.month||1)-1]||"-"}</span>`;render();focusScan()}
-function visibleHist(){return user.role==="SCANNER"?hist.filter(x=>x.inspector===user.name&&x.area===user.area):hist}
-function render(){let h=visibleHist(),ok=h.filter(x=>x.ok),today=h.filter(x=>x.date===nowDate()),dup=h.filter(x=>x.duplicate),unk=h.filter(x=>x.unknown),active=master.filter(x=>x.status!=="Inactive");$("total").textContent=active.length;$("found").textContent=ok.length;$("remain").textContent=Math.max(0,active.length-ok.length);$("today").textContent=today.length;$("dup").textContent=dup.length;$("unknown").textContent=unk.length;$("mTotal").textContent=master.length;$("mActive").textContent=active.length;$("mInactive").textContent=master.length-active.length;$("mUnique").textContent=new Set(master.map(x=>x.barcode.toUpperCase())).size;
+
+async function scan(raw){
+  let code=normBC(raw);hidBuffer="";$("barcode").value="";
+  if(!code)return focusScan();
+  $("scanStatus").className="status warn";$("scanStatus").textContent="กำลังบันทึกลง Google Sheets...";
+  try{
+    const data=await api("scan",{lookup:code,result:"พบเล่ม",inspector:user.name,area:user.area});
+    await refreshFromServer(false);
+    if(!data.found){
+      $("scanStatus").className="status err";
+      $("scanStatus").innerHTML=`❌ <b>ไม่พบ Barcode ในฐานข้อมูลกลาง</b> — ${code}`;
+      $("last").innerHTML=`<b style="color:#b91c1c">ไม่พบข้อมูลรถ</b><br>${code}`;
+    }else if(data.duplicate){
+      $("scanStatus").className="status warn";
+      $("scanStatus").innerHTML=`⚠️ <b>ตรวจซ้ำในรอบนี้</b> — ${data.vehicle?.["ทะเบียน"]||code}`;
+      $("last").innerHTML=`<b style="color:#934900">มีประวัติการตรวจแล้วในรอบนี้</b><br>${data.vehicle?.["ทะเบียน"]||code}`;
+    }else{
+      $("scanStatus").className="status ok";
+      $("scanStatus").innerHTML=`✓ <b>บันทึกลงฐานข้อมูลกลางแล้ว</b> — ${data.vehicle?.["ทะเบียน"]||code} • ${code}`;
+      $("last").innerHTML=`<b style="color:#126a45">พบเล่มและบันทึกแล้ว</b><br>${data.vehicle?.["ทะเบียน"]||""}<br><span class="muted">${code}</span>`;
+    }
+  }catch(e){
+    await refreshFromServer(false);
+    $("scanStatus").className="status err";
+    $("scanStatus").innerHTML=`❌ <b>บันทึกไม่สำเร็จ</b><br>${esc(e.message)}<br>กรุณาลองสแกนอีกครั้ง`;
+  }
+  render();focusScan();
+}
+async function resetMonth(){if(user?.role!=="ADMIN")return alert("เฉพาะ ADMIN เท่านั้น");if(!confirm("ยืนยันรีเซตรอบตรวจเดือน "+currentMonthKey+" ? ประวัติเดิมจะไม่ถูกลบ แต่จะเริ่มนับใหม่"))return;try{const r=await api("resetmonth",{inspector:user.name});await refreshFromServer(true);alert("เริ่มรอบตรวจใหม่แล้ว รอบที่ "+(r.round||currentRound));}catch(e){alert("รีเซตไม่สำเร็จ: "+e.message)}}
+function visibleHist(){return hist;}
+function render(){let cl=$("cycleLabel");if(cl)cl.textContent=(currentMonthKey||"เดือนปัจจุบัน")+" • รอบ "+currentRound;let h=visibleHist(),cycle=h.filter(x=>x.monthKey===currentMonthKey&&Number(x.round||1)===currentRound),ok=cycle.filter(x=>x.ok),today=cycle.filter(x=>x.date===nowDate()),dup=cycle.filter(x=>x.duplicate),unk=cycle.filter(x=>x.unknown),active=master.filter(x=>x.status!=="Inactive");$("total").textContent=active.length;$("found").textContent=ok.length;$("remain").textContent=Math.max(0,active.length-ok.length);$("today").textContent=today.length;$("dup").textContent=dup.length;$("unknown").textContent=unk.length;$("mTotal").textContent=master.length;$("mActive").textContent=active.length;$("mInactive").textContent=master.length-active.length;$("mUnique").textContent=new Set(master.map(x=>x.barcode.toUpperCase())).size;
 $("months").innerHTML=MONTHS.map((m,i)=>{let total=active.filter(x=>x.month===i+1).length,found=ok.filter(x=>x.month===i+1).length,p=total?found/total*100:0;return `<div class="month"><b>${m}</b><div class="bar"><i style="width:${p}%"></i></div><span>${found}/${total}</span></div>`}).join("");
 let rs=($("remSearch").value||"").toLowerCase(),rm=$("remMonth").value;let rem=active.filter(v=>!ok.some(x=>x.barcode===v.barcode)&&(!rs||(v.barcode+" "+v.plate).toLowerCase().includes(rs))&&(rm===""||+rm===v.month));$("remTable").innerHTML=rem.slice(0,1000).map(v=>`<tr><td>${v.barcode}</td><td>${v.plate}</td><td>${MONTHS[(v.month||1)-1]||"-"}</td><td><span class="badge gray">ยังไม่ตรวจ</span></td></tr>`).join("")||`<tr><td colspan="4">ไม่พบรายการ</td></tr>`;
 let vs=($("vehSearch").value||"").toLowerCase(),vm=$("vehMonth").value;let vr=active.filter(v=>(!vs||(v.barcode+" "+v.plate).toLowerCase().includes(vs))&&(vm===""||+vm===v.month));$("vehTable").innerHTML=vr.slice(0,1000).map(v=>{let x=ok.find(z=>z.barcode===v.barcode);return `<tr><td>${v.barcode}</td><td>${v.plate}</td><td>${MONTHS[(v.month||1)-1]||"-"}</td><td><span class="badge ${x?"green":"gray"}">${x?"พบเล่ม":"ยังไม่ตรวจ"}</span></td><td>${x?.inspector||"-"}</td><td>${x?.time||"-"}</td></tr>`}).join("")||`<tr><td colspan="6">ไม่พบรายการ</td></tr>`;
@@ -153,15 +229,18 @@ let ms=($("mSearch").value||"").toLowerCase(),mm=$("mMonth").value;let mr=master
 function fillFilters(){["remMonth","vehMonth","mMonth"].forEach(id=>$(id).innerHTML='<option value="">ทุกเดือน</option>'+MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join(""))}
 function openAdd(){if(user.role!=="ADMIN")return;modal(`<h3>＋ เพิ่มรถ/เล่มใหม่</h3><div class="row"><div><label>Barcode</label><input id="fbc" autofocus></div><div><label>ทะเบียน</label><input id="fplate"></div></div><label>เดือนจดทะเบียน</label><select id="fmonth">${MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join("")}</select><div class="actions"><button class="btn" onclick="saveVehicle()">บันทึก</button><button class="btn2" onclick="closeModal()">ยกเลิก</button></div>`)}
 function openEdit(i){let v=master[i];modal(`<h3>✏️ แก้ไข Master</h3><label>Barcode</label><input id="fbc" value="${esc(v.barcode)}"><label>ทะเบียน</label><input id="fplate" value="${esc(v.plate)}"><label>เดือนจดทะเบียน</label><select id="fmonth">${MONTHS.map((m,n)=>`<option value="${n+1}" ${n+1===v.month?"selected":""}>${m}</option>`).join("")}</select><div class="actions"><button class="btn" onclick="saveVehicle(${i})">บันทึกการแก้ไข</button><button class="btn2" onclick="closeModal()">ยกเลิก</button></div>`)}
-function saveVehicle(i){let bc=$("fbc").value.trim().toUpperCase(),plate=$("fplate").value.trim(),month=+$("fmonth").value;if(!bc||!plate){alert("กรุณากรอก Barcode และทะเบียน");return}let duplicate=master.some((v,n)=>n!==i&&v.barcode.toUpperCase()===bc);if(duplicate){alert("Barcode นี้มีอยู่แล้ว");return}if(i==null)master.push({barcode:bc,plate,month,status:"Active"});else master[i]={...master[i],barcode:bc,plate,month};save();closeModal();render()}
-function toggleVehicle(i){master[i].status=master[i].status==="Active"?"Inactive":"Active";save();render()}
+async function saveVehicle(i){let bc=$("fbc").value.trim().toUpperCase(),plate=$("fplate").value.trim(),month=+$("fmonth").value;if(!bc||!plate){alert("กรุณากรอก Barcode และทะเบียน");return}try{await api("savevehicle",{barcode:bc,plate,month,status:"Active"});closeModal();await refreshFromServer(true);}catch(e){alert("บันทึก Master ไม่สำเร็จ: "+e.message)}}
+async function toggleVehicle(i){let v=master[i];try{await api("togglevehicle",{barcode:v.barcode,status:v.status==="Active"?"Inactive":"Active"});await refreshFromServer(true);}catch(e){alert("แก้สถานะไม่สำเร็จ: "+e.message)}}
 function openImport(){modal(`<h3>📥 Import รถหลายคัน</h3><div class="notice">รูปแบบ: <b>Barcode,ทะเบียน,เดือน</b><br>ตัวอย่าง: 1300012345M,1กก 1234,1<br>วางได้หลายบรรทัด ระบบจะข้าม Barcode ที่ซ้ำ</div><textarea id="bulk" placeholder="1300012345M,1กก 1234,1&#10;1300012346M,1กก 1235,1"></textarea><div class="actions"><button class="btn" onclick="importBulk()">เพิ่มข้อมูล</button><button class="btn2" onclick="closeModal()">ยกเลิก</button></div>`)}
-function importBulk(){let lines=$("bulk").value.split(/\r?\n/),added=0;for(let line of lines){if(!line.trim())continue;let p=line.split(",").map(x=>x.trim()),bc=p[0]?.toUpperCase(),plate=p[1],month=+(p[2]||0);if(!bc||!plate||master.some(v=>v.barcode.toUpperCase()===bc))continue;master.push({barcode:bc,plate,month:month>=1&&month<=12?month:null,status:"Active"});added++}save();closeModal();render();alert(`เพิ่มรถสำเร็จ ${added} รายการ`)}
+async function importBulk(){let lines=$("bulk").value.split(/\r?\n/),rows=[];for(let line of lines){if(!line.trim())continue;let p=line.split(",").map(x=>x.trim()),bc=p[0]?.toUpperCase(),plate=p[1],month=+(p[2]||0);if(bc&&plate)rows.push({barcode:bc,plate,month:month>=1&&month<=12?month:"",status:"Active"});}try{let r=await api("bulkimport",{rows:JSON.stringify(rows)});closeModal();await refreshFromServer(true);alert(`นำเข้าฐานข้อมูลกลางสำเร็จ ${r.added||0} รายการ`)}catch(e){alert("Import ไม่สำเร็จ: "+e.message)}}
 function exportMaster(){let data=[["Barcode","ทะเบียน","เดือนจดทะเบียน","Status"],...master.map(v=>[v.barcode,v.plate,v.month||"",v.status])];downloadCSV(data,"Vehicle_Master.csv")}
 function exportCSV(){let h=visibleHist(),data=[["วันที่","เวลา","Barcode","ทะเบียน","เดือน","ผู้ตรวจ","หน่วยงาน","ผล"],...h.map(x=>[x.date,x.time,x.barcode,x.plate,x.month?MONTHS[x.month-1]:"",x.inspector,x.area,x.ok?"พบเล่ม":x.duplicate?"ตรวจซ้ำ":"ไม่พบ"])];downloadCSV(data,"Scan_History.csv")}
 function downloadCSV(data,name){let csv="\ufeff"+data.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n"),a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download=name;a.click()}
 function modal(s){$("modalBody").innerHTML=s;$("modal").classList.add("show");setTimeout(()=>document.querySelector("#modal input")?.focus(),50)}function closeModal(){$("modal").classList.remove("show")}function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 ["remSearch","remMonth","vehSearch","vehMonth","mSearch","mMonth"].forEach(id=>$(id).addEventListener("input",render));
 fillFilters();if(user)init();else $("lu").focus();
+setInterval(()=>{if(user && !document.hidden) refreshFromServer(false);},12000);
+document.addEventListener("visibilitychange",()=>{if(user&&!document.hidden)refreshFromServer(false);});
+window.addEventListener("focus",()=>{if(user)refreshFromServer(false);});
 </script>
 </body></html>

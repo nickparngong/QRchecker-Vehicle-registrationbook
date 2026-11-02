@@ -1,237 +1,120 @@
-const SPREADSHEET_ID = '1rfd7D_NraAkv-0zhnKUfWYtGNg0OPsDH0B7QDcsUZ3A';
-const VEHICLE_SHEET = 'VEHICLES';
-const HISTORY_SHEET = 'SCAN_HISTORY';
-const API_KEY = ''; // Optional. Leave empty.
-
-
-/**
- * ===== AUTHORIZATION / SETUP =====
- * Run authorizeSheetAccess() ONCE from the Apps Script editor.
- * Google will show the permission dialog for the account that owns/deploys
- * this Web App. This prevents the Web App from failing because the script
- * has never been authorized to access the spreadsheet.
- */
-function authorizeSheetAccess() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const vehicle = ss.getSheetByName(VEHICLE_SHEET);
-  const history = ss.getSheetByName(HISTORY_SHEET);
-
-  if (!vehicle) throw new Error('ไม่พบชีต VEHICLES');
-  if (!history) throw new Error('ไม่พบชีต SCAN_HISTORY');
-
-  // Force a real read/write authorization check.
-  vehicle.getRange(1, 1).getDisplayValue();
-  history.getRange(1, 1).getDisplayValue();
-
-  return 'Authorization สำเร็จ: ' + ss.getName();
+const SPREADSHEET_ID='1rfd7D_NraAkv-0zhnKUfWYtGNg0OPsDH0B7QDcsUZ3A';
+const VEHICLE_SHEET='VEHICLES', HISTORY_SHEET='SCAN_HISTORY', CYCLE_SHEET='SCAN_CYCLES';
+function doGet(e){
+ const p=(e&&e.parameter)||{},a=String(p.action||'health').toLowerCase();
+ try{
+  let r;
+  if(a==='health')r=health_();
+  else if(a==='getall')r=getAll_();
+  else if(a==='scan')r=scan_(p);
+  else if(a==='savevehicle')r=saveVehicle_(p);
+  else if(a==='togglevehicle')r=toggleVehicle_(p);
+  else if(a==='bulkimport')r=bulkImport_(p);
+  else if(a==='resetmonth')r=resetMonth_(p);
+  else r={ok:false,error:'Unknown action: '+a};
+  return output_(r,p.callback);
+ }catch(err){return output_({ok:false,error:String(err&&err.message||err)},p.callback);}
 }
-
-/**
- * Safe test function. Run after authorizeSheetAccess().
- */
-function testGoogleSheetAccess() {
-  const result = health_();
-  if (!result.ok) throw new Error('Google Sheet access failed');
-  return JSON.stringify(result, null, 2);
+function ss_(){return SpreadsheetApp.openById(SPREADSHEET_ID);}
+function health_(){const s=ss_();return {ok:true,spreadsheetId:s.getId(),spreadsheetName:s.getName(),time:new Date().toISOString()};}
+function monthKey_(s){return Utilities.formatDate(new Date(),s.getSpreadsheetTimeZone()||'Asia/Bangkok','yyyy-MM');}
+function ensureCycleSheet_(s){
+ let sh=s.getSheetByName(CYCLE_SHEET);
+ if(!sh){sh=s.insertSheet(CYCLE_SHEET);sh.appendRow(['MonthKey','Round','ResetAt','ResetBy']);}
+ if(sh.getLastRow()===0)sh.appendRow(['MonthKey','Round','ResetAt','ResetBy']);
+ return sh;
 }
-
-/**
- * Returns a user-friendly authorization status.
- */
-function authorizationStatus_() {
-  try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    return {
-      authorized: true,
-      spreadsheetName: ss.getName(),
-      spreadsheetId: ss.getId()
-    };
-  } catch (err) {
-    return {
-      authorized: false,
-      error: String(err && err.message || err)
-    };
+function currentCycle_(s){
+ const key=monthKey_(s),sh=ensureCycleSheet_(s),v=sh.getDataRange().getDisplayValues();
+ let round=1;
+ for(let i=1;i<v.length;i++)if(String(v[i][0])===key)round=Math.max(round,Number(v[i][1]||1));
+ return {monthKey:key,round:round};
+}
+function getAll_(){
+ const s=ss_(),c=currentCycle_(s);
+ return {ok:true,vehicles:readSheet_(s.getSheetByName(VEHICLE_SHEET)),history:readSheet_(s.getSheetByName(HISTORY_SHEET)),monthKey:c.monthKey,round:c.round};
+}
+function readSheet_(sh){
+ if(!sh)throw new Error('ไม่พบชีตที่ต้องการอ่าน');
+ const v=sh.getDataRange().getDisplayValues();if(!v.length)return [];
+ const h=v[0].map(x=>String(x).trim());
+ return v.slice(1).filter(r=>r.some(x=>String(x).trim()!=='')).map((r,i)=>{const o={_row:i+2};h.forEach((k,j)=>o[k]=r[j]===undefined?'':r[j]);return o;});
+}
+function ensureHistoryHeaders_(sh){
+ if(sh.getLastRow()===0)sh.appendRow(['Scan_ID','วันที่','เวลา','QR_Code','ทะเบียน','พื้นที่','ผู้ตรวจ','ผลการตรวจ']);
+ let h=sh.getRange(1,1,1,sh.getLastColumn()).getDisplayValues()[0].map(x=>String(x).trim());
+ ['MonthKey','Round'].forEach(k=>{if(h.indexOf(k)<0){sh.getRange(1,h.length+1).setValue(k);h.push(k);}});
+ return h;
+}
+function appendHistory_(sh,o){
+ const h=ensureHistoryHeaders_(sh),row=h.map(k=>o[k]===undefined?'':o[k]);
+ sh.appendRow(row);
+}
+function norm_(v){return String(v||'').replace(/[\r\n\t\uFEFF\u200B\u200C\u200D]/g,'').replace(/\s+/g,'').trim().toUpperCase();}
+function scan_(p){
+ const lock=LockService.getScriptLock();lock.waitLock(25000);
+ try{
+  const s=ss_(),vsh=s.getSheetByName(VEHICLE_SHEET),hsh=s.getSheetByName(HISTORY_SHEET);
+  if(!vsh||!hsh)throw new Error('ไม่พบชีต VEHICLES หรือ SCAN_HISTORY');
+  const code=norm_(p.lookup),inspector=String(p.inspector||'').trim(),area=String(p.area||'').trim();
+  if(!code)throw new Error('ไม่พบ Barcode');if(!inspector)throw new Error('ไม่พบชื่อผู้ตรวจ');
+  const c=currentCycle_(s),vh=vsh.getDataRange().getDisplayValues(),heads=vh[0].map(x=>String(x).trim()),ix={};heads.forEach((x,i)=>ix[x]=i);
+  let row=-1;const searchCols=['Barcode','QRCode','VehicleID'];
+  for(let r=1;r<vh.length;r++){if(searchCols.some(k=>ix[k]!==undefined&&norm_(vh[r][ix[k]])===code)){row=r+1;break;}}
+  const tz=s.getSpreadsheetTimeZone()||'Asia/Bangkok',now=new Date(),date=Utilities.formatDate(now,tz,'dd/MM/yyyy'),time=Utilities.formatDate(now,tz,'HH:mm:ss');
+  let plate='',qr=code,found=row>0;
+  if(found){plate=ix['ทะเบียน']!==undefined?vh[row-1][ix['ทะเบียน']]||'':'';qr=(ix['QRCode']!==undefined&&vh[row-1][ix['QRCode']])|| (ix['Barcode']!==undefined&&vh[row-1][ix['Barcode']])||code;}
+  const hheads=ensureHistoryHeaders_(hsh),hv=hsh.getDataRange().getDisplayValues(),hi={};hheads.forEach((x,i)=>hi[x]=i);
+  let duplicate=false;
+  if(found){
+   for(let r=1;r<hv.length;r++){
+    if(norm_(hv[r][hi['QR_Code']])===norm_(qr)&&String(hv[r][hi['MonthKey']]||'')===c.monthKey&&Number(hv[r][hi['Round']]||1)===c.round&&String(hv[r][hi['ผลการตรวจ']]||'')==='พบเล่ม'){duplicate=true;break;}
+   }
   }
-}
-
-function doGet(e) {
-  const p = (e && e.parameter) ? e.parameter : {};
-  try {
-    const action = String(p.action || 'health').toLowerCase();
-    let result;
-    if (action === 'health') result = health_();
-    else if (action === 'auth') result = authorizationStatus_();
-    else if (action === 'getall') result = getAll_();
-    else if (action === 'scan') result = scan_(p);
-    else result = {ok:false, error:'Unknown action: '+action};
-    return output_(result, p.callback);
-  } catch (err) {
-    return output_({ok:false,error:String(err && err.message || err)}, p.callback);
+  const result=!found?'ไม่พบข้อมูล':duplicate?'ตรวจซ้ำ':'พบเล่ม';
+  appendHistory_(hsh,{'Scan_ID':'SCAN-'+Utilities.getUuid(),'วันที่':date,'เวลา':time,'QR_Code':qr,'ทะเบียน':plate,'พื้นที่':area,'ผู้ตรวจ':inspector,'ผลการตรวจ':result,'MonthKey':c.monthKey,'Round':c.round});
+  if(found&&!duplicate){
+   const updates={'ผู้ตรวจล่าสุด':inspector,'วันที่ตรวจล่าสุด':date,'เวลาตรวจล่าสุด':time,'พื้นที่':area};
+   Object.keys(updates).forEach(k=>{if(ix[k]!==undefined)vsh.getRange(row,ix[k]+1).setValue(updates[k]);});
   }
+  return {ok:true,duplicate:duplicate,found:found,monthKey:c.monthKey,round:c.round,vehicle:found?{'ทะเบียน':plate,'Barcode':qr}:null,result:result};
+ }finally{lock.releaseLock();}
 }
-
-function doPost(e) {
-  try {
-    const body = e && e.postData && e.postData.contents ? JSON.parse(e.postData.contents) : {};
-    const action = String(body.action || '').toLowerCase();
-    const result = action === 'scan' ? scan_(body) :
-      action === 'auth' ? authorizationStatus_() :
-      {ok:false,error:'Unknown action'};
-    return output_(result, body.callback);
-  } catch (err) {
-    return output_({ok:false,error:String(err && err.message || err)});
-  }
+function resetMonth_(p){
+ const lock=LockService.getScriptLock();lock.waitLock(25000);
+ try{
+  const s=ss_(),sh=ensureCycleSheet_(s),key=monthKey_(s),v=sh.getDataRange().getDisplayValues();let round=0;
+  for(let i=1;i<v.length;i++)if(String(v[i][0])===key)round=Math.max(round,Number(v[i][1]||1));
+  round++;
+  sh.appendRow([key,round,new Date(),String(p.inspector||'ADMIN')]);
+  return {ok:true,monthKey:key,round:round};
+ }finally{lock.releaseLock();}
 }
-
-function health_() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const vehiclesSheet = ss.getSheetByName(VEHICLE_SHEET);
-  const historySheet = ss.getSheetByName(HISTORY_SHEET);
-  if (!vehiclesSheet) throw new Error('ไม่พบชีต VEHICLES');
-  if (!historySheet) throw new Error('ไม่พบชีต SCAN_HISTORY');
-  return {
-    ok:true,
-    authorized:true,
-    spreadsheetId:ss.getId(),
-    spreadsheetName:ss.getName(),
-    vehiclesSheet:true,
-    historySheet:true
-  };
+function saveVehicle_(p){
+ const barcode=String(p.barcode||'').trim(),plate=String(p.plate||'').trim(),month=String(p.month||'').trim();
+ if(!barcode||!plate)throw new Error('กรุณาระบุ Barcode และทะเบียน');
+ const lock=LockService.getScriptLock();lock.waitLock(25000);
+ try{
+  const s=ss_(),sh=s.getSheetByName(VEHICLE_SHEET);if(!sh)throw new Error('ไม่พบชีต VEHICLES');
+  const vals=sh.getDataRange().getDisplayValues(),heads=vals[0].map(x=>String(x).trim()),ix={};heads.forEach((x,i)=>ix[x]=i);
+  const bcCol=ix['Barcode']!==undefined?ix['Barcode']:ix['QRCode'];if(bcCol===undefined)throw new Error('ไม่พบคอลัมน์ Barcode/QRCode');
+  let row=-1;for(let r=1;r<vals.length;r++)if(norm_(vals[r][bcCol])===norm_(barcode)){row=r+1;break;}
+  let data=row>0?vals[row-1].slice():new Array(heads.length).fill('');
+  const set=(k,v)=>{if(ix[k]!==undefined)data[ix[k]]=v;};
+  set('Barcode',barcode);set('ทะเบียน',plate);set('เดือนจดทะเบียน',month);
+  if(row<0){set('สถานะ','Active');sh.appendRow(data);}else sh.getRange(row,1,1,heads.length).setValues([data]);
+  return {ok:true,updated:row>0};
+ }finally{lock.releaseLock();}
 }
-
-/* Backward-compatible public aliases */
-function getAll() { return getAll_(); }
-function health() { return health_(); }
-
-function getAll_() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const vs = ss.getSheetByName(VEHICLE_SHEET);
-  const hs = ss.getSheetByName(HISTORY_SHEET);
-  if (!vs) throw new Error('ไม่พบชีต VEHICLES');
-  if (!hs) throw new Error('ไม่พบชีต SCAN_HISTORY');
-  return {
-    ok:true,
-    vehicles: readSheet_(vs),
-    history: readSheet_(hs)
-  };
+function toggleVehicle_(p){
+ const s=ss_(),sh=s.getSheetByName(VEHICLE_SHEET),v=sh.getDataRange().getDisplayValues(),h=v[0].map(x=>String(x).trim()),ix={};h.forEach((x,i)=>ix[x]=i);
+ const bc=norm_(p.barcode),bcCol=ix.Barcode!==undefined?ix.Barcode:ix.QRCode;if(bcCol===undefined||ix['สถานะ']===undefined)throw new Error('ไม่พบคอลัมน์ที่จำเป็น');
+ for(let r=1;r<v.length;r++)if(norm_(v[r][bcCol])===bc){sh.getRange(r+1,ix['สถานะ']+1).setValue(String(p.status)==='Active'?'Active':'Inactive');return {ok:true};}
+ throw new Error('ไม่พบ Barcode');
 }
-
-function readSheet_(sheet) {
-  const values = sheet.getDataRange().getDisplayValues();
-  if (!values || values.length === 0) return [];
-  const headers = values[0].map(String);
-  return values.slice(1).map(function(row, i) {
-    const obj = {_row:i+2};
-    headers.forEach(function(h,j){ obj[h] = row[j] == null ? '' : String(row[j]); });
-    return obj;
-  });
+function bulkImport_(p){
+ const rows=JSON.parse(p.rows||'[]');if(!Array.isArray(rows))throw new Error('รูปแบบข้อมูลไม่ถูกต้อง');
+ let added=0,updated=0;rows.forEach(x=>{const r=saveVehicle_({barcode:x.barcode,plate:x.plate,month:x.month});if(r.updated)updated++;else added++;});
+ return {ok:true,added:added,updated:updated};
 }
-
-function scan_(p) {
-  checkKey_(p.key);
-  const lock = LockService.getScriptLock();
-  lock.waitLock(15000);
-  try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = ss.getSheetByName(VEHICLE_SHEET);
-    const hist = ss.getSheetByName(HISTORY_SHEET);
-    if (!sheet) throw new Error('ไม่พบชีต VEHICLES');
-    if (!hist) throw new Error('ไม่พบชีต SCAN_HISTORY');
-
-    const lookup = String(p.lookup || '').trim().toLowerCase();
-    const result = String(p.result || '').trim();
-    const inspector = String(p.inspector || '').trim();
-    const area = String(p.area || '').trim();
-
-    if (!lookup) throw new Error('ไม่มี Barcode / QR / Vehicle ID');
-    if (!inspector) throw new Error('กรุณาระบุผู้ตรวจ');
-    if (['พบเล่ม','ไม่พบเล่ม','ยังไม่ตรวจ'].indexOf(result) < 0)
-      throw new Error('ผลการตรวจไม่ถูกต้อง');
-
-    const values = sheet.getDataRange().getDisplayValues();
-    if (values.length < 2) throw new Error('VEHICLES ไม่มีข้อมูล');
-    const headers = values[0].map(String);
-    const idx = {};
-    headers.forEach(function(h,i){idx[h]=i;});
-
-    const searchCols = ['Barcode','QRCode','VehicleID','ทะเบียน'];
-    let foundRow = -1;
-    for (let r=1; r<values.length; r++) {
-      for (let k=0; k<searchCols.length; k++) {
-        const c = idx[searchCols[k]];
-        if (c !== undefined && String(values[r][c] || '').trim().toLowerCase() === lookup) {
-          foundRow = r + 1;
-          break;
-        }
-      }
-      if (foundRow > 0) break;
-    }
-
-    if (foundRow < 0)
-      return {ok:false,error:'ไม่พบรถจาก Barcode / QR / Vehicle ID นี้'};
-
-    const vehicle = {};
-    headers.forEach(function(h,i){ vehicle[h] = values[foundRow-1][i] || ''; });
-
-    const oldStatus = String(vehicle['สถานะ'] || '').trim();
-    if (oldStatus === result && result !== 'ยังไม่ตรวจ') {
-      return {ok:true,duplicate:true,message:'รถคันนี้ถูกบันทึกผลนี้ไว้แล้ว',vehicle:vehicle};
-    }
-
-    const now = new Date();
-    const tz = ss.getSpreadsheetTimeZone() || 'Asia/Bangkok';
-    const date = Utilities.formatDate(now,tz,'dd/MM/yyyy');
-    const time = Utilities.formatDate(now,tz,'HH:mm:ss');
-
-    const statusCol = idx['สถานะ'];
-    if (statusCol === undefined) throw new Error('ไม่พบคอลัมน์ สถานะ');
-    const firstCol = statusCol + 1;
-
-    // F:J in the current workbook:
-    // สถานะ | ผู้ตรวจล่าสุด | วันที่ตรวจล่าสุด | เวลาตรวจล่าสุด | พื้นที่
-    sheet.getRange(foundRow, firstCol, 1, 5)
-      .setValues([[result, inspector, date, time, area]]);
-
-    const scanId = 'SCAN-' + Utilities.getUuid();
-    const qr = vehicle['QRCode'] || vehicle['Barcode'] || vehicle['VehicleID'] || '';
-    const plate = vehicle['ทะเบียน'] || '';
-    hist.appendRow([scanId,date,time,qr,plate,area,inspector,result]);
-
-    vehicle['สถานะ']=result;
-    vehicle['ผู้ตรวจล่าสุด']=inspector;
-    vehicle['วันที่ตรวจล่าสุด']=date;
-    vehicle['เวลาตรวจล่าสุด']=time;
-    vehicle['พื้นที่']=area;
-
-    return {
-      ok:true,
-      duplicate:false,
-      vehicle:vehicle,
-      scan:{
-        Scan_ID:scanId, วันที่:date, เวลา:time, QR_Code:qr,
-        ทะเบียน:plate, พื้นที่:area, ผู้ตรวจ:inspector, ผลการตรวจ:result
-      }
-    };
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-function checkKey_(key) {
-  if (API_KEY && String(key || '') !== API_KEY)
-    throw new Error('Invalid API key');
-}
-
-function output_(obj, callback) {
-  const json = JSON.stringify(obj);
-  if (callback) {
-    if (!/^[A-Za-z_$][0-9A-Za-z_$]*$/.test(callback)) {
-      return ContentService.createTextOutput(JSON.stringify({ok:false,error:'Invalid callback'}))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-    return ContentService.createTextOutput(callback + '(' + json + ');')
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
-  }
-  return ContentService.createTextOutput(json)
-    .setMimeType(ContentService.MimeType.JSON);
-}
+function output_(o,cb){const s=JSON.stringify(o);if(cb){if(!/^[A-Za-z_$][0-9A-Za-z_$]*$/.test(cb))return ContentService.createTextOutput('Invalid callback');return ContentService.createTextOutput(cb+'('+s+');').setMimeType(ContentService.MimeType.JAVASCRIPT);}return ContentService.createTextOutput(s).setMimeType(ContentService.MimeType.JSON);}
