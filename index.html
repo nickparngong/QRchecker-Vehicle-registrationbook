@@ -196,18 +196,23 @@ async function scan(raw){
   try{
     const data=await api("scan",{lookup:code,result:"พบเล่ม",inspector:user.name,area:user.area});
     await refreshFromServer(false);
-    if(!data.found){
+    // Compatibility: older Apps Script deployments may omit the boolean `found`.
+    // Verify against the freshly loaded central VEHICLES master before declaring unknown.
+    const matchedVehicle=master.find(v=>normBC(v.barcode)===code && v.status!=="Inactive");
+    const isFound=!!matchedVehicle || data.found===true;
+    const isDuplicate=data.duplicate===true;
+    if(!isFound){
       $("scanStatus").className="status err";
       $("scanStatus").innerHTML=`❌ <b>ไม่พบ Barcode ในฐานข้อมูลกลาง</b> — ${code}`;
       $("last").innerHTML=`<b style="color:#b91c1c">ไม่พบข้อมูลรถ</b><br>${code}`;
-    }else if(data.duplicate){
+    }else if(isDuplicate){
       $("scanStatus").className="status warn";
-      $("scanStatus").innerHTML=`⚠️ <b>ตรวจซ้ำในรอบนี้</b> — ${data.vehicle?.["ทะเบียน"]||code}`;
-      $("last").innerHTML=`<b style="color:#934900">มีประวัติการตรวจแล้วในรอบนี้</b><br>${data.vehicle?.["ทะเบียน"]||code}`;
+      $("scanStatus").innerHTML=`⚠️ <b>ตรวจซ้ำในรอบนี้</b> — ${data.vehicle?.["ทะเบียน"]||matchedVehicle?.plate||code}`;
+      $("last").innerHTML=`<b style="color:#934900">มีประวัติการตรวจแล้วในรอบนี้</b><br>${data.vehicle?.["ทะเบียน"]||matchedVehicle?.plate||code}`;
     }else{
       $("scanStatus").className="status ok";
-      $("scanStatus").innerHTML=`✓ <b>บันทึกลงฐานข้อมูลกลางแล้ว</b> — ${data.vehicle?.["ทะเบียน"]||code} • ${code}`;
-      $("last").innerHTML=`<b style="color:#126a45">พบเล่มและบันทึกแล้ว</b><br>${data.vehicle?.["ทะเบียน"]||""}<br><span class="muted">${code}</span>`;
+      $("scanStatus").innerHTML=`✓ <b>บันทึกลงฐานข้อมูลกลางแล้ว</b> — ${data.vehicle?.["ทะเบียน"]||matchedVehicle?.plate||code} • ${code}`;
+      $("last").innerHTML=`<b style="color:#126a45">พบเล่มและบันทึกแล้ว</b><br>${data.vehicle?.["ทะเบียน"]||matchedVehicle?.plate||""}<br><span class="muted">${code}</span>`;
     }
   }catch(e){
     await refreshFromServer(false);
